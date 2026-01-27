@@ -6,8 +6,10 @@ import { withErrorHandler } from "@/lib/api-error-handler";
 import { AuthenticationError } from "@/lib/errors";
 import { Logger } from "@/lib/logger";
 import { loginSchema } from "@/lib/validation-schemas";
+import { rateLimit } from "@/lib/rate-limiter";
 
-export const POST = withErrorHandler(async (request: Request) => {
+export const POST = rateLimit(
+  withErrorHandler(async (request: Request) => {
   const startTime = Date.now();
   const body = await request.json();
 
@@ -79,4 +81,10 @@ export const POST = withErrorHandler(async (request: Request) => {
     },
     token,
   });
-});
+}),
+{
+  maxRequests: 5,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  message: 'Too many login attempts. Please try again later.',
+}
+);

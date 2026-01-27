@@ -95,20 +95,20 @@ Each task builds incrementally, ensuring the system remains functional throughou
     - **Property 3: Input Validation on All API Endpoints**
     - **Validates: Requirements US-2.6**
 
-- [ ] 5. Implement rate limiting on authentication endpoints
-  - [ ] 5.1 Create rate limiting middleware
+- [x] 5. Implement rate limiting on authentication endpoints
+  - [x] 5.1 Create rate limiting middleware
     - Implement in-memory rate limiter (or use library like rate-limiter-flexible)
     - Configure limits: 5 attempts per 15 minutes for auth endpoints
     - Return 429 status when rate limit exceeded
     - _Requirements: US-3.6_
   
-  - [ ] 5.2 Apply rate limiting to auth routes
+  - [x] 5.2 Apply rate limiting to auth routes
     - Add rate limiting to /api/auth/login
     - Add rate limiting to /api/auth/register
     - Add rate limiting to /api/auth/forgot-password
     - _Requirements: US-3.6_
   
-  - [ ] 5.3 Write property test for rate limiting
+  - [x] 5.3 Write property test for rate limiting
     - **Property 7: Rate Limiting on Authentication Endpoints**
     - **Validates: Requirements US-3.6**
 

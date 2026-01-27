@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import nodemailer from "nodemailer";
 import { hash } from "bcryptjs";
 import crypto from "crypto";
+import { rateLimit } from "@/lib/rate-limiter";
 
 // Email configuration
 const transporter = nodemailer.createTransport({
@@ -24,7 +25,8 @@ transporter.verify(function (error: any) {
   }
 });
 
-export async function POST(req: Request) {
+export const POST = rateLimit(
+  async (req: Request) => {
   try {
     const { email } = await req.json();
 
@@ -311,7 +313,13 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+},
+{
+  maxRequests: 5,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  message: 'Too many password reset attempts. Please try again later.',
 }
+);
 
 export async function PUT(req: Request) {
   try {
