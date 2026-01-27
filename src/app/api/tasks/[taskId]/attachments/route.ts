@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { uploadToBlob, deleteFromBlob, isValidFileSize, ALLOWED_DOCUMENT_TYPES, ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from "@/lib/blob-storage";
 
 export async function GET(
   request: Request,
@@ -67,22 +66,19 @@ export async function POST(
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadDir = path.join(process.cwd(), "public/uploads");
-    await mkdir(uploadDir, { recursive: true });
+    // Validate file size
+    if (!isValidFileSize(file.size, MAX_FILE_SIZE)) {
+      return NextResponse.json({ 
+        error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` 
+      }, { status: 400 });
+    }
 
-    // Save file
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    
-    // Create unique filename
-    const fileName = `${Date.now()}-${file.name}`;
-    const filePath = path.join(uploadDir, fileName);
-    
-    // Write file to disk
-    await writeFile(filePath, buffer);
 
-    const fileUrl = `/uploads/${fileName}`;
+    // Upload to Vercel Blob
+    const fileUrl = await uploadToBlob(buffer, file.name, 'task-attachments');
 
     // Save attachment record to database
     const attachment = await prisma.attachment.create({
@@ -141,6 +137,9 @@ export async function DELETE(
     await prisma.attachment.delete({
       where: { id: attachmentId },
     });
+
+    // Delete file from Blob storage
+    await deleteFromBlob(attachment.fileUrl);
 
     return NextResponse.json({ success: true });
   } catch (error) {

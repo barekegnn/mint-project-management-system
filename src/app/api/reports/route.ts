@@ -1,26 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { uploadToBlob, isValidFileSize, ALLOWED_DOCUMENT_TYPES, MAX_FILE_SIZE } from "@/lib/blob-storage";
 
 export const config = {
   api: {
     bodyParser: false,
   },
 };
-
-// Ensure uploads directory exists
-async function ensureUploadsDir() {
-  const uploadDir = path.join(process.cwd(), "public/uploads");
-  try {
-    await mkdir(uploadDir, { recursive: true });
-  } catch (error) {
-    // Directory might already exist, which is fine
-    console.log("Uploads directory already exists or could not be created");
-  }
-  return uploadDir;
-}
 
 export async function POST(request: Request) {
   try {
@@ -70,22 +57,19 @@ export async function POST(request: Request) {
       if (!task) {
         return NextResponse.json({ error: "Task not found" }, { status: 404 });
       }
-      // Save file
+
+      // Validate file size
+      if (!isValidFileSize(file.size, MAX_FILE_SIZE)) {
+        return NextResponse.json({ 
+          error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` 
+        }, { status: 400 });
+      }
+
+      // Convert file to buffer and upload to Blob
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const fileName = `${Date.now()}-${file.name}`;
-      const uploadDir = await ensureUploadsDir();
-      const filePath = path.join(uploadDir, fileName);
-      try {
-        await writeFile(filePath, buffer);
-      } catch (error) {
-        console.error("Error writing file:", error);
-        return NextResponse.json(
-          { error: "Failed to save file" },
-          { status: 500 }
-        );
-      }
-      const fileUrl = `/uploads/${fileName}`;
+      const fileUrl = await uploadToBlob(buffer, file.name, 'reports');
+
       // Create report
       const report = await prisma.report.create({
         data: {
@@ -123,22 +107,19 @@ export async function POST(request: Request) {
       if (!project) {
         return NextResponse.json({ error: "Project not found" }, { status: 404 });
       }
-      // Save file
+
+      // Validate file size
+      if (!isValidFileSize(file.size, MAX_FILE_SIZE)) {
+        return NextResponse.json({ 
+          error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` 
+        }, { status: 400 });
+      }
+
+      // Convert file to buffer and upload to Blob
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const fileName = `${Date.now()}-${file.name}`;
-      const uploadDir = await ensureUploadsDir();
-      const filePath = path.join(uploadDir, fileName);
-      try {
-        await writeFile(filePath, buffer);
-      } catch (error) {
-        console.error("Error writing file:", error);
-        return NextResponse.json(
-          { error: "Failed to save file" },
-          { status: 500 }
-        );
-      }
-      const fileUrl = `/uploads/${fileName}`;
+      const fileUrl = await uploadToBlob(buffer, file.name, 'reports');
+
       // Create report
       const report = await prisma.report.create({
         data: {

@@ -38,6 +38,7 @@
     "@radix-ui/react-tabs": "^1.1.11",
     "@types/bcrypt": "^5.0.2",
     "@types/formidable": "^3.4.5",
+    "@vercel/blob": "^2.0.1",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.4.9",

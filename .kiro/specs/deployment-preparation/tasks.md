@@ -112,31 +112,31 @@ Each task builds incrementally, ensuring the system remains functional throughou
     - **Property 7: Rate Limiting on Authentication Endpoints**
     - **Validates: Requirements US-3.6**
 
-- [ ] 6. Checkpoint - Ensure all tests pass
+- [x] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 
-- [ ] 7. Migrate file storage from AWS S3 to Vercel Blob
-  - [ ] 7.1 Install and configure Vercel Blob SDK
+- [x] 7. Migrate file storage from AWS S3 to Vercel Blob
+  - [x] 7.1 Install and configure Vercel Blob SDK
     - Install @vercel/blob package
     - Create file storage utility with uploadToBlob, deleteFromBlob, listBlobFiles functions
     - Add BLOB_READ_WRITE_TOKEN and ENABLE_UPLOADS to environment configuration
     - _Requirements: US-4.3_
   
-  - [ ] 7.2 Update file upload API routes
+  - [x] 7.2 Update file upload API routes
     - Replace AWS S3 upload code with Vercel Blob upload
     - Update file deletion endpoints to use Vercel Blob
     - Update file retrieval to use Blob URLs
     - Remove AWS SDK dependencies from package.json
     - _Requirements: US-4.3_
   
-  - [ ] 7.3 Update database schema for Blob URLs
+  - [x] 7.3 Update database schema for Blob URLs
     - Ensure fileUrl fields can store Blob URLs
     - Update any S3-specific URL parsing logic
     - Test file upload and retrieval with Blob storage
     - _Requirements: US-4.3_
   
-  - [ ] 7.4 Write unit tests for file storage operations
+  - [x] 7.4 Write unit tests for file storage operations
     - Test file upload returns valid URL
     - Test file deletion succeeds
     - Test file listing works correctly
