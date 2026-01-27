@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+export const GET = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const startTime = Date.now();
     const { id } = await params;
     const user = await prisma.user.findUnique({
       where: { id },
@@ -19,17 +19,18 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ error: "Manager not found" }, { status: 404 });
     }
-    return NextResponse.json({ user });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch manager" }, { status: 500 });
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+  return NextResponse.json({ user });
+  
+});
+
+export const PUT = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const startTime = Date.now();
     const body = await request.json();
     const { fullName, email } = body;
     const { id } = await params;
@@ -37,17 +38,18 @@ export async function PUT(
       where: { id },
       data: { fullName, email },
     });
-    return NextResponse.json({ user });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to update manager" }, { status: 500 });
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PUT mint_pms', duration);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+  return NextResponse.json({ user });
+  
+});
+
+export const DELETE = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const startTime = Date.now();
     const { id } = await params;
     
     // First check if the user exists
@@ -86,11 +88,11 @@ export async function DELETE(
 
     // Now delete the user
     await prisma.user.delete({ where: { id } });
-    return NextResponse.json({ message: "Manager deleted successfully" });
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    return NextResponse.json({ 
-      error: "Failed to delete manager: " + (error instanceof Error ? error.message : 'Unknown error') 
-    }, { status: 500 });
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('DELETE mint_pms', duration);
+
+  return NextResponse.json({ message: "Manager deleted successfully" });
+  
+});

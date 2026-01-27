@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ memberId: string }> }
-) {
-  try {
+export const PUT = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ memberId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     
     if (!user) {
@@ -82,21 +82,18 @@ export async function PUT(
       }
     });
 
-    return NextResponse.json(updatedMember);
-  } catch (error) {
-    console.error("Error updating team member:", error);
-    return NextResponse.json(
-      { error: "Failed to update team member" },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PUT mint_pms', duration);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ memberId: string }> }
-) {
-  try {
+  return NextResponse.json(updatedMember);
+  
+}); 
+
+export const DELETE = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ memberId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     
     if (!user) {
@@ -107,7 +104,7 @@ export async function DELETE(
     }
 
     const { memberId } = await params;
-    console.log("Attempting to delete team member:", memberId);
+    Logger.info("Attempting to delete team member:", memberId);
 
     // Verify the team member exists and is a team member
     const teamMember = await prisma.user.findFirst({
@@ -123,14 +120,14 @@ export async function DELETE(
     });
 
     if (!teamMember) {
-      console.log("Team member not found:", memberId);
+      Logger.info("Team member not found:", memberId);
       return NextResponse.json(
         { error: "Team member not found or not authorized" },
         { status: 404 }
       );
     }
 
-    console.log("Found team member:", {
+    Logger.info("Found team member:", {
       id: teamMember.id,
       name: teamMember.fullName,
       tasks: teamMember.assignedTasks.length,
@@ -178,13 +175,12 @@ export async function DELETE(
       }
     });
 
-    console.log("Successfully deleted team member:", memberId);
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting team member:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete team member" },
-      { status: 500 }
-    );
-  }
-} 
+    Logger.info("Successfully deleted team member:", memberId);
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('DELETE mint_pms', duration);
+
+  return NextResponse.json({ success: true });
+  
+}); 

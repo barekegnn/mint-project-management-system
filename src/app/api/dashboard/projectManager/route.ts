@@ -5,11 +5,13 @@ import { verify } from "jsonwebtoken";
 import prisma from "@/lib/prisma";
 import { formatDistanceToNow } from "date-fns";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
 const SECRET = process.env.JWT_SECRET || "your-secret";
 
-export async function GET() {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
 
     if (!user) {
@@ -249,21 +251,11 @@ export async function GET() {
       })),
     };
 
-    return NextResponse.json(formattedData);
-  } catch (error) {
-    console.error("Error in project manager dashboard API:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new NextResponse(
-      JSON.stringify({
-        error: "Internal Server Error",
-        details: errorMessage,
-      }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json(formattedData);
+  
+});

@@ -4,6 +4,8 @@ import nodemailer from "nodemailer";
 import { hash } from "bcryptjs";
 import crypto from "crypto";
 import { rateLimit } from "@/lib/rate-limiter";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
 // Email configuration
 const transporter = nodemailer.createTransport({
@@ -321,8 +323,8 @@ export const POST = rateLimit(
 }
 );
 
-export async function PUT(req: Request) {
-  try {
+export const PUT = withErrorHandler(async (req: Request) => {
+  const startTime = Date.now();
     const { token, newPassword } = await req.json();
 
     if (!token || !newPassword) {
@@ -361,15 +363,14 @@ export async function PUT(req: Request) {
       data: { used: true },
     });
 
-    return NextResponse.json(
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PUT mint_pms', duration);
+
+  return NextResponse.json(
       { message: "Password reset successful" },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Password reset error:", error);
-    return NextResponse.json(
-      { error: "Failed to reset password" },
-      { status: 500 }
-    );
-  }
-}
+  
+});

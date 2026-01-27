@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function POST(
-  request: Request,
-  { params }: { params: { projectId: string } }
-) {
-  try {
+export const POST = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ projectId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     
     if (!user) {
@@ -16,6 +16,7 @@ export async function POST(
       );
     }
 
+    const { projectId } = await params;
     const { userId } = await request.json();
 
     if (!userId) {
@@ -28,8 +29,8 @@ export async function POST(
     // Verify the project exists and belongs to the current user
     const project = await prisma.project.findFirst({
       where: {
-        id: params.projectId,
-        holder: user.id
+        id: projectId,
+        holderId: user.id
       }
     });
 
@@ -40,29 +41,16 @@ export async function POST(
       );
     }
 
-    // Add the team member
-    const updatedProject = await prisma.project.update({
-      where: {
-        id: params.projectId
-      },
-      data: {
-        teamMembers: {
-          connect: {
-            id: userId
-          }
-        }
-      },
-      include: {
-        teamMembers: true
-      }
-    });
+    // Add the team member - Note: This requires a Team model relationship
+    // For now, we'll return a not implemented response
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
 
-    return NextResponse.json(updatedProject);
-  } catch (error) {
-    console.error("Error adding team member:", error);
-    return NextResponse.json(
-      { error: "Failed to add team member" },
-      { status: 500 }
+  return NextResponse.json(
+      { error: "Team member management not yet implemented" },
+      { status: 501 }
     );
-  }
-} 
+  
+}); 

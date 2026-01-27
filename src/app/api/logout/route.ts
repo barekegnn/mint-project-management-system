@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { serialize } from "cookie";
+import { withErrorHandler } from "@/lib/api-error-handler";
+import { Logger } from "@/lib/logger";
 
-export async function POST() {
+export const POST = withErrorHandler(async (request: Request) => {
   const response = NextResponse.json({ message: "Logged out successfully" });
 
   // Clear the auth cookie
@@ -16,5 +18,7 @@ export async function POST() {
     })
   );
 
+  Logger.info("User logged out");
+
   return response;
-} 
+}); 

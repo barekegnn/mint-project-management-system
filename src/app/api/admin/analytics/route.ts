@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/serverAuth';
+import { getCacheHeader } from '@/lib/cache-headers';
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
 // Helper function to convert BigInt to Number
 function convertBigIntToNumber(obj: any): any {
@@ -27,30 +30,30 @@ function convertBigIntToNumber(obj: any): any {
   return obj;
 }
 
-export async function GET() {
-  try {
-    console.log('Analytics API: Starting request');
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
+    Logger.info('Analytics API: Starting request');
     
     const user = await getCurrentUser();
-    console.log('Analytics API: Current user:', user);
+    Logger.info('Analytics API: Current user:', user);
 
     if (!user) {
-      console.log('Analytics API: No user found');
+      Logger.info('Analytics API: No user found');
       return NextResponse.json({ error: 'Unauthorized - No user found' }, { status: 401 });
     }
 
     if (user.role !== 'ADMIN') {
-      console.log('Analytics API: User is not admin', { userId: user.id, role: user.role });
+      Logger.info('Analytics API: User is not admin', { userId: user.id, role: user.role });
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
     }
 
-    console.log('Analytics API: Fetching data...');
+    Logger.info('Analytics API: Fetching data...');
 
     // Get total projects
     const totalProjects = await prisma.$queryRaw`
       SELECT COUNT(*) as count FROM "Project"
     `;
-    console.log('Analytics API: Total projects:', totalProjects);
+    Logger.info('Analytics API: Total projects:', totalProjects);
 
     // Get projects by status
     const projectsByStatus = await prisma.$queryRaw`
@@ -58,14 +61,14 @@ export async function GET() {
       FROM "Project" 
       GROUP BY status
     `;
-    console.log('Analytics API: Projects by status:', projectsByStatus);
+    Logger.info('Analytics API: Projects by status:', projectsByStatus);
 
     // Get total budget
     const totalBudget = await prisma.$queryRaw`
       SELECT COALESCE(SUM(CAST(budget AS INTEGER)), 0) as total 
       FROM "Project"
     `;
-    console.log('Analytics API: Total budget:', totalBudget);
+    Logger.info('Analytics API: Total budget:', totalBudget);
 
     // Get total number of project managers
     const totalManagers = await prisma.$queryRaw`
@@ -73,7 +76,7 @@ export async function GET() {
       FROM "Project"
       WHERE "holderId" IS NOT NULL
     `;
-    console.log('Analytics API: Total managers:', totalManagers);
+    Logger.info('Analytics API: Total managers:', totalManagers);
 
     // Get projects by manager
     const projectsByManager = await prisma.$queryRaw`
@@ -85,7 +88,7 @@ export async function GET() {
       GROUP BY u."fullName"
       ORDER BY count DESC
     `;
-    console.log('Analytics API: Projects by manager:', projectsByManager);
+    Logger.info('Analytics API: Projects by manager:', projectsByManager);
 
     // Get recent projects
     const recentProjects = await prisma.$queryRaw`
@@ -97,7 +100,7 @@ export async function GET() {
       ORDER BY p."createdAt" DESC
       LIMIT 5
     `;
-    console.log('Analytics API: Recent projects:', recentProjects);
+    Logger.info('Analytics API: Recent projects:', recentProjects);
 
     // Get project completion rate
     const completionRate = await prisma.$queryRaw`
@@ -108,7 +111,7 @@ export async function GET() {
         ) as rate
       FROM "Project"
     `;
-    console.log('Analytics API: Completion rate:', completionRate);
+    Logger.info('Analytics API: Completion rate:', completionRate);
 
     const response = {
       totalProjects: Number((totalProjects as any[])[0].count),
@@ -120,13 +123,16 @@ export async function GET() {
       completionRate: Number((completionRate as any[])[0].rate || 0)
     };
 
-    console.log('Analytics API: Sending response:', response);
-    return NextResponse.json(response);
-  } catch (error) {
-    console.error('Analytics API: Error fetching analytics:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch analytics data' },
-      { status: 500 }
-    );
-  }
-} 
+    Logger.info('Analytics API: Sending response:', response);
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': getCacheHeader('stale-while-revalidate'), // Cache but revalidate in background
+      },
+    });
+  
+}); 

@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { taskId: string; attachmentId: string } }
-) {
-  try {
+export const DELETE = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ taskId: string; attachmentId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taskId, attachmentId } = params;
+    const { taskId, attachmentId } = await params;
 
     // Verify attachment exists
     const attachment = await prisma.attachment.findUnique({
@@ -39,12 +39,11 @@ export async function DELETE(
       where: { id: attachmentId },
     });
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting attachment:", error);
-    return NextResponse.json(
-      { error: "Failed to delete attachment" },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('DELETE mint_pms', duration);
+
+  return NextResponse.json({ success: true });
+  
+}); 

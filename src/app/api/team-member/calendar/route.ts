@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async (req: Request) => {
+  const startTime = Date.now();
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const { searchParams } = new URL(req.url);
-    const month = searchParams.get('month') || new Date().getMonth();
-    const year = searchParams.get('year') || new Date().getFullYear();
+    const month = searchParams.get('month') || String(new Date().getMonth());
+    const year = searchParams.get('year') || String(new Date().getFullYear());
 
     const startDate = new Date(parseInt(year), parseInt(month), 1);
     const endDate = new Date(parseInt(year), parseInt(month) + 1, 0);
@@ -40,6 +43,11 @@ export async function GET(req: Request) {
 
     return NextResponse.json(calendarData);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch calendar data" }, { status: 500 });
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json({ error: "Failed to fetch calendar data" }, { status: 500 });
   }
-} 
+}); 

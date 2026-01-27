@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function POST(request: Request, contextPromise: Promise<{ params: { reportId: string } }>) {
-  const { params } = await contextPromise;
-  const reportId = params.reportId;
+export const POST = withErrorHandler(async (request: Request, { params }: { params: Promise<{ reportId: string }> }) => {
+  const startTime = Date.now();
+  const { reportId } = await params;
 
   try {
     const user = await getCurrentUser();
@@ -116,10 +118,15 @@ export async function POST(request: Request, contextPromise: Promise<{ params: {
 
     return NextResponse.json(updatedReport);
   } catch (error) {
-    console.error("Error reviewing report:", error);
-    return NextResponse.json(
+    Logger.error("Error reviewing report:", error);
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json(
       { error: "Failed to review report" },
       { status: 500 }
     );
   }
-} 
+}); 

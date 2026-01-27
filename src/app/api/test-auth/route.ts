@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/serverAuth';
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET() {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     
     if (!user) {
@@ -12,7 +14,12 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json({
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json({
       authenticated: true,
       user: {
         id: user.id,
@@ -22,11 +29,5 @@ export async function GET() {
       }
     });
 
-  } catch (error) {
-    console.error('Auth test error:', error);
-    return NextResponse.json({ 
-      authenticated: false, 
-      error: 'Authentication error' 
-    });
-  }
-} 
+  
+}); 

@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
 import { NotificationType } from "@prisma/client";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { memberId: string } }
-) {
-  try {
+export const GET = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ memberId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     
     if (!user) {
@@ -17,7 +17,7 @@ export async function GET(
       );
     }
 
-    const { memberId } = params;
+    const { memberId } = await params;
 
     // Fetch all tasks assigned to this team member
     const tasks = await prisma.task.findMany({
@@ -41,21 +41,18 @@ export async function GET(
       }
     });
 
-    return NextResponse.json({ tasks });
-  } catch (error) {
-    console.error("Error fetching team member tasks:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch team member tasks" },
-      { status: 500 }
-    );
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
 
-export async function POST(
-  request: Request,
-  { params }: { params: { memberId: string } }
-) {
-  try {
+  return NextResponse.json({ tasks });
+  
+});
+
+export const POST = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ memberId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     
     if (!user) {
@@ -65,8 +62,8 @@ export async function POST(
       );
     }
 
-    console.log(`[TASK_ASSIGNMENT] User ${user.id} attempting to assign task`);
-    console.log(`[TASK_ASSIGNMENT] Current user role: ${user.role}`);
+    Logger.info(`[TASK_ASSIGNMENT] User ${user.id} attempting to assign task`);
+    Logger.info(`[TASK_ASSIGNMENT] Current user role: ${user.role}`);
 
     const body = await request.json();
     const { taskId, dueDate } = body;
@@ -78,7 +75,7 @@ export async function POST(
       );
     }
 
-    console.log(`[TASK_ASSIGNMENT] Looking for task ${taskId}`);
+    Logger.info(`[TASK_ASSIGNMENT] Looking for task ${taskId}`);
 
     // Verify the task exists and belongs to a project managed by this user
     const task = await prisma.task.findFirst({
@@ -94,7 +91,7 @@ export async function POST(
     });
 
     if (!task) {
-      console.log(`[TASK_ASSIGNMENT] Task not found with project.holderId = ${user.id}`);
+      Logger.info(`[TASK_ASSIGNMENT] Task not found with project.holderId = ${user.id}`);
       // Additional check if task exists in other projects
       const taskExists = await prisma.task.findUnique({
         where: { id: taskId },
@@ -102,7 +99,7 @@ export async function POST(
       });
       
       if (taskExists) {
-        console.log(`[TASK_ASSIGNMENT] Task exists but belongs to another project manager`);
+        Logger.info(`[TASK_ASSIGNMENT] Task exists but belongs to another project manager`);
         return NextResponse.json(
           { error: "Task not found or access unauthorized. Please ensure you are the project manager for this task." },
           { status: 403 }
@@ -115,10 +112,10 @@ export async function POST(
       }
     }
 
-    console.log(`[TASK_ASSIGNMENT] Found task: ${task.title} in project: ${task.project.name}`);
+    Logger.info(`[TASK_ASSIGNMENT] Found task: ${task.title} in project: ${task.project.name}`);
 
     // Get the memberId from params
-    const memberId = params.memberId;
+    const { memberId } = await params;
 
     // Update the task with the assigned team member
     const updatedTask = await prisma.task.update({
@@ -150,12 +147,11 @@ export async function POST(
       },
     });
 
-    return NextResponse.json({ task: updatedTask });
-  } catch (error) {
-    console.error("Error assigning task:", error);
-    return NextResponse.json(
-      { error: "Failed to assign task" },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json({ task: updatedTask });
+  
+}); 

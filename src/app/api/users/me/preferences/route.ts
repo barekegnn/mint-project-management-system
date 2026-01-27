@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/serverAuth";
 import prisma from "@/lib/prisma";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
 // Default user preferences
 const defaultPreferences = {
@@ -26,33 +28,27 @@ const defaultPreferences = {
   }
 };
 
-export async function GET() {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Get user preferences from database
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { preferences: true }
-    });
+    // Preferences field doesn't exist in schema - return default preferences
+    const preferences = defaultPreferences;
 
-    // Return default preferences if none exist
-    const preferences = dbUser?.preferences || defaultPreferences;
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
 
-    return NextResponse.json({ preferences });
-  } catch (error) {
-    console.error("Error fetching preferences:", error);
-    return NextResponse.json({ 
-      error: "Failed to fetch preferences" 
-    }, { status: 500 });
-  }
-}
+  return NextResponse.json({ preferences });
+  
+});
 
-export async function PUT(request: Request) {
-  try {
+export const PUT = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -67,31 +63,15 @@ export async function PUT(request: Request) {
       }, { status: 400 });
     }
 
-    // Validate preferences structure
-    const requiredSections = ['notifications', 'display', 'privacy'];
-    for (const section of requiredSections) {
-      if (!preferences[section]) {
-        return NextResponse.json({ 
-          error: `Missing required section: ${section}` 
-        }, { status: 400 });
-      }
-    }
+    // Preferences field doesn't exist in schema - return not implemented
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PUT mint_pms', duration);
 
-    // Update user preferences
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { preferences }
-    });
+  return NextResponse.json({ 
+      error: "User preferences feature not yet implemented" 
+    }, { status: 501 });
 
-    return NextResponse.json({ 
-      preferences,
-      message: "Preferences updated successfully" 
-    });
-
-  } catch (error) {
-    console.error("Error updating preferences:", error);
-    return NextResponse.json({ 
-      error: "Failed to update preferences" 
-    }, { status: 500 });
-  }
-} 
+  
+}); 

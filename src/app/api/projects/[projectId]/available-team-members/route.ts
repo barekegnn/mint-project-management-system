@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { projectId: string } }
-) {
-  try {
+export const GET = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ projectId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     
     if (!user) {
@@ -16,11 +16,13 @@ export async function GET(
       );
     }
 
+    const { projectId } = await params;
+
     // Verify the project exists and belongs to the current user
     const project = await prisma.project.findFirst({
       where: {
-        id: params.projectId,
-        holder: user.name
+        id: projectId,
+        holderId: user.id
       }
     });
 
@@ -31,24 +33,24 @@ export async function GET(
       );
     }
 
-    // Get team members assigned by this project manager
-    const teamMembers = await prisma.teamMember.findMany({
+    // Get team members (users with TEAM_MEMBER role)
+    const teamMembers = await prisma.user.findMany({
       where: {
-        assignedById: user.id
+        role: 'TEAM_MEMBER',
+        status: 'ACTIVE'
       },
       select: {
         id: true,
-        name: true,
+        fullName: true,
         email: true
       }
     });
 
-    return NextResponse.json({ teamMembers });
-  } catch (error) {
-    console.error("Error fetching available team members:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch available team members" },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json({ teamMembers });
+  
+}); 

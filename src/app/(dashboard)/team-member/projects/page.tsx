@@ -325,7 +325,7 @@ export default function ProjectsPage() {
                                     <Button
                                       key={f}
                                       variant={taskFilter === f ? "default" : "outline"}
-                                      size="xs"
+                                      size="sm"
                                       onClick={() => setTaskFilters((prev) => ({ ...prev, [project.id]: f }))}
                                     >
                                       {f.charAt(0) + f.slice(1).toLowerCase().replace('_', ' ')}
@@ -393,12 +393,12 @@ export default function ProjectsPage() {
                                             {isUpcoming && !isOverdue && <span className="text-xs text-[#fb8c00] font-semibold ml-2">Upcoming</span>}
                                             {/* Task Actions */}
                                             {task.status !== "COMPLETED" && (
-                                              <Button size="xs" className="ml-2" onClick={() => handleTaskComplete(project.id, task.id)}>
+                                              <Button size="sm" className="ml-2" onClick={() => handleTaskComplete(project.id, task.id)}>
                                                 Mark as Complete
                                               </Button>
                                             )}
                                             {task.status === "PENDING" && (
-                                              <Button size="xs" variant="outline" className="ml-2" onClick={() => handleTaskStart(project.id, task.id)}>
+                                              <Button size="sm" variant="outline" className="ml-2" onClick={() => handleTaskStart(project.id, task.id)}>
                                                 Start Task
                                               </Button>
                                             )}

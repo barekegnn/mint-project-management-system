@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET() {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
-    console.log("Current user:", user);
+    Logger.info("Current user:", user);
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -15,7 +17,7 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    console.log("Fetching projects...");
+    Logger.info("Fetching projects...");
     const projects = await prisma.project.findMany({
       include: {
         holder: {
@@ -30,7 +32,7 @@ export async function GET() {
       },
     });
 
-    console.log("Raw projects:", projects);
+    Logger.info("Raw projects:", projects);
 
     const transformedProjects = projects.map((project) => ({
       id: project.id,
@@ -46,32 +48,31 @@ export async function GET() {
       holderId: project.holderId || "",
     }));
 
-    console.log("Transformed projects:", transformedProjects);
+    Logger.info("Transformed projects:", transformedProjects);
 
-    return NextResponse.json({ projects: transformedProjects });
-  } catch (error) {
-    console.error("Error fetching projects:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch projects" },
-      { status: 500 }
-    );
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
 
-export async function POST(request: Request) {
-  try {
-    console.log("POST request received for new project");
+  return NextResponse.json({ projects: transformedProjects });
+  
+});
+
+export const POST = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
+    Logger.info("POST request received for new project");
 
     const user = await getCurrentUser();
-    console.log("Current user:", user);
+    Logger.info("Current user:", user);
 
     if (!user) {
-      console.log("Unauthorized: No user found");
+      Logger.info("Unauthorized: No user found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     if (user.role !== "ADMIN") {
-      console.log("Forbidden: User is not admin", {
+      Logger.info("Forbidden: User is not admin", {
         userId: user.id,
         role: user.role,
       });
@@ -79,11 +80,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    console.log("Request body:", body);
+    Logger.info("Request body:", body);
 
     // Validate required fields
     if (!body.name?.trim()) {
-      console.log("Bad request: Missing project name");
+      Logger.info("Bad request: Missing project name");
       return NextResponse.json(
         { error: "Project name is required" },
         { status: 400 }
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
     }
 
     if (!body.budget?.trim()) {
-      console.log("Bad request: Missing budget");
+      Logger.info("Bad request: Missing budget");
       return NextResponse.json(
         { error: "Budget is required" },
         { status: 400 }
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
     }
 
     if (isNaN(Number(body.budget))) {
-      console.log("Bad request: Invalid budget format");
+      Logger.info("Bad request: Invalid budget format");
       return NextResponse.json(
         { error: "Budget must be a valid number" },
         { status: 400 }
@@ -107,7 +108,7 @@ export async function POST(request: Request) {
     }
 
     // Create the project
-    console.log("Creating new project:", body);
+    Logger.info("Creating new project:", body);
     const project = await prisma.project.create({
       data: {
         name: body.name.trim(),
@@ -121,7 +122,7 @@ export async function POST(request: Request) {
       },
     });
 
-    console.log("Project created successfully:", project);
+    Logger.info("Project created successfully:", project);
 
     // Create notification for project creation
     await prisma.notification.create({
@@ -133,7 +134,12 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json({
       project: {
         id: project.id,
         name: project.name,
@@ -148,20 +154,11 @@ export async function POST(request: Request) {
         holderId: null,
       },
     });
-  } catch (error) {
-    console.error("Error creating project:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to create project",
-      },
-      { status: 500 }
-    );
-  }
-}
+  
+});
 
-export async function PATCH(request: Request) {
-  try {
+export const PATCH = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user || user.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -250,17 +247,16 @@ export async function PATCH(request: Request) {
       },
     });
 
-    return NextResponse.json({
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PATCH mint_pms', duration);
+
+  return NextResponse.json({
       project: {
         ...project,
         holder: project.holder?.fullName || "Unassigned",
       },
     });
-  } catch (error) {
-    console.error("Error updating project:", error);
-    return NextResponse.json(
-      { error: "Failed to update project" },
-      { status: 500 }
-    );
-  }
-}
+  
+});

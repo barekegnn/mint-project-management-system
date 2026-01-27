@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
+export const DELETE = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const startTime = Date.now();
+    const { id } = await params;
     // Validate the notification ID
-    if (!params.id) {
+    if (!id) {
       return NextResponse.json(
         { error: "Notification ID is required" },
         { status: 400 }
@@ -17,7 +18,7 @@ export async function DELETE(
     // Check if notification exists
     const notification = await prisma.notification.findUnique({
       where: {
-        id: params.id
+        id
       }
     });
 
@@ -31,19 +32,18 @@ export async function DELETE(
     // Delete the notification
     await prisma.notification.delete({
       where: {
-        id: params.id
+        id
       }
     });
 
-    return NextResponse.json(
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('DELETE mint_pms', duration);
+
+  return NextResponse.json(
       { message: "Notification deleted successfully" },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Error deleting notification:", error);
-    return NextResponse.json(
-      { error: "Failed to delete notification" },
-      { status: 500 }
-    );
-  }
-} 
+  
+}); 

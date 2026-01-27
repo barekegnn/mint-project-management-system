@@ -1,7 +1,36 @@
 /**
  * Structured Logging Utility
  * 
- * Provides consistent logging across the application with different log levels
+ * Provides consistent logging across the application with different log levels.
+ * 
+ * Features:
+ * - Error logging with stack traces and context
+ * - Warning and info logging with data
+ * - Debug logging (development only)
+ * - API request logging with method, path, status code, and duration
+ * - Slow query detection and logging
+ * - JSON formatting in production for easy parsing
+ * - Human-readable formatting in development
+ * 
+ * Usage:
+ * ```typescript
+ * // Log an error with context
+ * Logger.error('Database query failed', error, { userId: '123', query: 'SELECT...' });
+ * 
+ * // Log a warning
+ * Logger.warn('Rate limit approaching', { userId: '123', requests: 95 });
+ * 
+ * // Log an info message
+ * Logger.info('User logged in', { userId: '123', email: 'user@example.com' });
+ * 
+ * // Log an API request (automatically done by withErrorHandler)
+ * Logger.logRequest('GET', '/api/users', 200, 150);
+ * 
+ * // Log a slow query
+ * Logger.logSlowQuery('SELECT * FROM users WHERE...', 650);
+ * ```
+ * 
+ * @see withErrorHandler - Automatically logs all API requests
  */
 
 type LogLevel = 'error' | 'warn' | 'info' | 'debug';

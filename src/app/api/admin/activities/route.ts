@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { withErrorHandler } from "@/lib/api-error-handler";
+import { Logger } from "@/lib/logger";
 
-export async function GET() {
-  try {
-    // Fetch recent activities from notifications
-    const activities = await prisma.notification.findMany({
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
+  
+  // Fetch recent activities from notifications
+  const activities = await prisma.notification.findMany({
       orderBy: {
         createdAt: 'desc'
       },
@@ -38,14 +41,14 @@ export async function GET() {
         case 'PROJECT_DELETED':
           title = `Project "${activity.project?.name}" deleted`;
           break;
-        case 'USER_REGISTERED':
-          title = `New user "${activity.user?.fullName}" registered`;
-          break;
         case 'TASK_ASSIGNED':
           title = `Task assigned to ${activity.user?.fullName}`;
           break;
-        case 'BUDGET_UPDATED':
-          title = `Budget updated for project "${activity.project?.name}"`;
+        case 'TASK_CREATED':
+          title = `New task created`;
+          break;
+        case 'TASK_UPDATED':
+          title = `Task updated`;
           break;
         default:
           title = activity.message;
@@ -77,12 +80,9 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ activities: formattedActivities });
-  } catch (error) {
-    console.error('Error fetching activities:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch activities' },
-      { status: 500 }
-    );
-  }
-} 
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('Fetch activities', duration);
+
+  return NextResponse.json({ activities: formattedActivities });
+}); 

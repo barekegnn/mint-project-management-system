@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { taskId: string } }
-) {
-  try {
+export const PUT = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ taskId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const taskId = params.taskId;
+    const { taskId } = await params;
     if (!taskId) {
       return NextResponse.json(
         { error: "Task ID is required" },
@@ -66,27 +66,24 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(updatedTask);
-  } catch (error) {
-    console.error("Error updating task:", error);
-    return NextResponse.json(
-      { error: "Failed to update task" },
-      { status: 500 }
-    );
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PUT mint_pms', duration);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { taskId: string } }
-) {
-  try {
+  return NextResponse.json(updatedTask);
+  
+});
+
+export const DELETE = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ taskId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const taskId = params.taskId;
+    const { taskId } = await params;
     if (!taskId) {
       return NextResponse.json(
         { error: "Task ID is required" },
@@ -122,12 +119,11 @@ export async function DELETE(
       });
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting task:", error);
-    return NextResponse.json(
-      { error: "Failed to delete task" },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('DELETE mint_pms', duration);
+
+  return NextResponse.json({ success: true });
+  
+}); 

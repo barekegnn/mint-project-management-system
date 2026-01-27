@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from '@/lib/prisma';
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
 interface SessionUser {
   id: string;
@@ -48,8 +50,8 @@ const authOptions: NextAuthOptions = {
   ],
 };
 
-export async function GET() {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const session = await getServerSession(authOptions);
     const user = session?.user as SessionUser | undefined;
 
@@ -63,7 +65,7 @@ export async function GET() {
     // Fetch projects where the current user is the holder
     const projects = await prisma.project.findMany({
       where: {
-        holder: user.name
+        holderId: user.id
       },
       orderBy: {
         createdAt: 'desc'
@@ -74,7 +76,7 @@ export async function GET() {
     const formattedProjects = projects.map(project => ({
       id: project.id,
       name: project.name,
-      holder: project.holder,
+      holderId: project.holderId,
       status: project.status,
       budget: project.budget,
       description: project.description,
@@ -82,12 +84,11 @@ export async function GET() {
       updatedAt: project.updatedAt
     }));
 
-    return NextResponse.json(formattedProjects);
-  } catch (error) {
-    console.error('Error fetching user projects:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch projects' },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json(formattedProjects);
+  
+}); 

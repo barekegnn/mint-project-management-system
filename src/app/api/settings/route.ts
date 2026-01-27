@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/serverAuth';
 import prisma from '@/lib/prisma';
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
 // Default settings structure
 const defaultSettings = {
@@ -45,8 +47,8 @@ const defaultSettings = {
   }
 };
 
-export async function GET() {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     
     if (!user) {
@@ -62,55 +64,54 @@ export async function GET() {
     try {
       const existing = await prisma.systemSettings.findFirst();
       if (existing?.settings) {
-        settings = existing.settings;
+        settings = existing.settings as typeof defaultSettings;
       }
     } catch (error) {
-      console.log('SystemSettings table not found, using defaults:', error);
+      Logger.info('SystemSettings table not found, using defaults:', error);
       // Table doesn't exist yet, use defaults
     }
-    return NextResponse.json({
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json({
       settings,
       message: 'Settings retrieved successfully'
     });
 
-  } catch (error) {
-    console.error('Error fetching settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch settings' },
-      { status: 500 }
-    );
-  }
-}
+  
+});
 
-export async function PUT(request: NextRequest) {
-  try {
-    console.log('Settings PUT request received');
+export const PUT = withErrorHandler(async (request: NextRequest) => {
+  const startTime = Date.now();
+    Logger.info('Settings PUT request received');
     
     const user = await getCurrentUser();
-    console.log('Current user:', user);
+    Logger.info('Current user:', user);
     
     // For development/testing, allow admin access if no user is found
     // In production, you should always require authentication
     if (!user) {
-      console.log('No user found - checking if this is a development environment');
+      Logger.info('No user found - checking if this is a development environment');
       // You can add a development check here if needed
       return NextResponse.json({ error: 'Unauthorized - Please log in as admin' }, { status: 401 });
     }
 
     if (user.role !== 'ADMIN') {
-      console.log('User is not admin - forbidden');
+      Logger.info('User is not admin - forbidden');
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    console.log('User is admin, processing request');
+    Logger.info('User is admin, processing request');
     
     const body = await request.json();
-    console.log('Request body:', body);
+    Logger.info('Request body:', body);
     
     const { settings } = body;
 
     if (!settings) {
-      console.log('No settings in request body');
+      Logger.info('No settings in request body');
       return NextResponse.json(
         { error: 'Settings data is required' },
         { status: 400 }
@@ -121,7 +122,7 @@ export async function PUT(request: NextRequest) {
     const requiredSections = ['projects', 'notifications', 'display', 'system'];
     for (const section of requiredSections) {
       if (!settings[section]) {
-        console.log(`Missing section: ${section}`);
+        Logger.info(`Missing section: ${section}`);
         return NextResponse.json(
           { error: `Missing required section: ${section}` },
           { status: 400 }
@@ -129,7 +130,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    console.log('Settings validation passed');
+    Logger.info('Settings validation passed');
 
     // Upsert settings in DB
     try {
@@ -145,23 +146,22 @@ export async function PUT(request: NextRequest) {
         });
       }
     } catch (error) {
-      console.log('SystemSettings table not found, cannot save settings:', error);
+      Logger.info('SystemSettings table not found, cannot save settings:', error);
       return NextResponse.json(
         { error: 'Database not ready - please run: npx prisma db push' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PUT mint_pms', duration);
+
+  return NextResponse.json({
       settings,
       message: 'Settings updated successfully'
     });
 
-  } catch (error) {
-    console.error('Error updating settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to update settings - ' + (error instanceof Error ? error.message : 'Unknown error') },
-      { status: 500 }
-    );
-  }
-} 
+  
+}); 

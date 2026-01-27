@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET() {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -22,15 +24,17 @@ export async function GET() {
     if (!dbUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    return NextResponse.json({ user: dbUser });
-  } catch (error) {
-    console.error("Error in /api/users/me:", error);
-    return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
 
-export async function PUT(request: Request) {
-  try {
+  return NextResponse.json({ user: dbUser });
+  
+});
+
+export const PUT = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -58,8 +62,11 @@ export async function PUT(request: Request) {
         updatedAt: true,
       },
     });
-    return NextResponse.json({ user: updatedUser });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PUT mint_pms', duration);
+
+  return NextResponse.json({ user: updatedUser });
+  
+}); 

@@ -2,40 +2,40 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/serverAuth';
 import { ProjectStatus } from '@prisma/client';
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ projectId: string }> }
-) {
-  try {
+export const PUT = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ projectId: string }> }) => {
+  const startTime = Date.now();
     const { projectId } = await params;
-    console.log('PUT request received for project:', projectId);
+    Logger.info('PUT request received for project:', projectId);
     
     const user = await getCurrentUser();
-    console.log('Current user:', user);
+    Logger.info('Current user:', user);
 
     if (!user) {
-      console.log('Unauthorized: No user found');
+      Logger.info('Unauthorized: No user found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (user.role !== 'ADMIN') {
-      console.log('Forbidden: User is not admin', { userId: user.id, role: user.role });
+      Logger.info('Forbidden: User is not admin', { userId: user.id, role: user.role });
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const body = await request.json();
-    console.log('Request body:', body);
+    Logger.info('Request body:', body);
     const { name, budget, status, description, fileName, fileUrl, holderId } = body;
 
     // Verify that the project exists
-    console.log('Verifying project exists:', projectId);
+    Logger.info('Verifying project exists:', projectId);
     const existingProject = await prisma.$queryRaw`
       SELECT id FROM "Project" WHERE id = ${projectId}
     `;
 
     if (!existingProject || !(existingProject as any[]).length) {
-      console.log('Project not found:', projectId);
+      Logger.info('Project not found:', projectId);
       return NextResponse.json(
         { error: 'Project not found' },
         { status: 404 }
@@ -44,13 +44,13 @@ export async function PUT(
 
     // If holderId is provided, verify the project manager exists
     if (holderId) {
-      console.log('Verifying project manager:', holderId);
+      Logger.info('Verifying project manager:', holderId);
       const projectManager = await prisma.$queryRaw`
         SELECT id, "fullName" FROM "User" WHERE id = ${holderId}
       `;
 
       if (!projectManager || !(projectManager as any[]).length) {
-        console.log('Project manager not found:', holderId);
+        Logger.info('Project manager not found:', holderId);
         return NextResponse.json(
           { error: 'Project manager not found' },
           { status: 404 }
@@ -73,7 +73,7 @@ export async function PUT(
     });
 
     // Update the project
-    console.log('Updating project:', { projectId, updates: body });
+    Logger.info('Updating project:', { projectId, updates: body });
     
     // Build the update query based on provided fields
     let updateQuery = `
@@ -91,11 +91,11 @@ export async function PUT(
     const queryParams = [name, budget, status, description, fileName, fileUrl];
 
     if (holderId) {
-      updateQuery += `, "holderId" = $${queryParams.length + 1}`;
+      updateQuery += `, "holderId" = ${queryParams.length + 1}`;
       queryParams.push(holderId);
     }
 
-    updateQuery += ` WHERE id = $${queryParams.length + 1}`;
+    updateQuery += ` WHERE id = ${queryParams.length + 1}`;
     queryParams.push(projectId);
 
     await prisma.$executeRawUnsafe(updateQuery, ...queryParams);
@@ -115,7 +115,7 @@ export async function PUT(
     }
 
     const projectData = (updatedProject as any[])[0];
-    console.log('Project updated successfully:', projectData);
+    Logger.info('Project updated successfully:', projectData);
 
     // Compare old and new values for notification
     const changes: string[] = [];
@@ -172,7 +172,12 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json({
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PUT mint_pms', duration);
+
+  return NextResponse.json({
       project: {
         id: projectData.id,
         name: projectData.name,
@@ -187,44 +192,36 @@ export async function PUT(
         holderId: projectData.holderId
       }
     });
-  } catch (error) {
-    console.error('Error updating project:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update project' },
-      { status: 500 }
-    );
-  }
-}
+  
+});
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ projectId: string }> }
-) {
-  try {
+export const DELETE = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ projectId: string }> }) => {
+  const startTime = Date.now();
     const { projectId } = await params;
-    console.log('DELETE request received for project:', projectId);
+    Logger.info('DELETE request received for project:', projectId);
     
     const user = await getCurrentUser();
-    console.log('Current user:', user);
+    Logger.info('Current user:', user);
 
     if (!user) {
-      console.log('Unauthorized: No user found');
+      Logger.info('Unauthorized: No user found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (user.role !== 'ADMIN') {
-      console.log('Forbidden: User is not admin', { userId: user.id, role: user.role });
+      Logger.info('Forbidden: User is not admin', { userId: user.id, role: user.role });
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Verify that the project exists
-    console.log('Verifying project exists:', projectId);
+    Logger.info('Verifying project exists:', projectId);
     const existingProject = await prisma.$queryRaw`
       SELECT id, "holderId" FROM "Project" WHERE id = ${projectId}
     `;
 
     if (!existingProject || !(existingProject as any[]).length) {
-      console.log('Project not found:', projectId);
+      Logger.info('Project not found:', projectId);
       return NextResponse.json(
         { error: 'Project not found' },
         { status: 404 }
@@ -246,21 +243,21 @@ export async function DELETE(
     }
 
     // Delete related notifications first
-    console.log('Deleting related notifications');
+    Logger.info('Deleting related notifications');
     await prisma.$executeRaw`
       DELETE FROM "Notification"
       WHERE "projectId" = ${projectId}
     `;
 
     // Delete related tasks
-    console.log('Deleting related tasks');
+    Logger.info('Deleting related tasks');
     await prisma.$executeRaw`
       DELETE FROM "Task"
       WHERE "projectId" = ${projectId}
     `;
 
     // Delete the project
-    console.log('Deleting project');
+    Logger.info('Deleting project');
     await prisma.$executeRaw`
       DELETE FROM "Project"
       WHERE id = ${projectId}
@@ -270,16 +267,15 @@ export async function DELETE(
     // because the Notification.project relation is required and the project
     // record has already been deleted.
 
-    console.log('Project deleted successfully');
-    return NextResponse.json({ 
+    Logger.info('Project deleted successfully');
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('DELETE mint_pms', duration);
+
+  return NextResponse.json({ 
       message: 'Project deleted successfully',
       projectId 
     });
-  } catch (error) {
-    console.error('Error deleting project:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to delete project' },
-      { status: 500 }
-    );
-  }
-} 
+  
+}); 

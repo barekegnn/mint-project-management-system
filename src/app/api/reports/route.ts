@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { uploadToBlob, isValidFileSize, ALLOWED_DOCUMENT_TYPES, MAX_FILE_SIZE } from "@/lib/blob-storage";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
 export const config = {
   api: {
@@ -9,8 +11,8 @@ export const config = {
   },
 };
 
-export async function POST(request: Request) {
-  try {
+export const POST = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
 
     if (!user) {
@@ -138,22 +140,21 @@ export async function POST(request: Request) {
       });
       return NextResponse.json(report);
     } else {
-      return NextResponse.json(
+      
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json(
         { error: "Not allowed" },
         { status: 403 }
       );
     }
-  } catch (error) {
-    console.error("Error creating report:", error);
-    return NextResponse.json(
-      { error: "Failed to create report" },
-      { status: 500 }
-    );
-  }
-}
+  
+});
 
-export async function GET(request: Request) {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
 
     if (!user) {
@@ -194,12 +195,11 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json(reports);
-  } catch (error) {
-    console.error("Error fetching reports:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch reports" },
-      { status: 500 }
-    );
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json(reports);
+  
+});

@@ -349,12 +349,12 @@ export default function MyTasksPage() {
                         {isUpcoming && !isOverdue && <span className="text-xs text-[#fb8c00] font-semibold ml-2">Upcoming</span>}
                         {/* Direct Actions */}
                         {task.status !== "COMPLETED" && (
-                          <Button size="xs" className="ml-2" onClick={() => handleDirectComplete(task.id)}>
+                          <Button size="sm" className="ml-2" onClick={() => handleDirectComplete(task.id)}>
                             Mark as Complete
                           </Button>
                         )}
                         {task.status === "PENDING" && (
-                          <Button size="xs" variant="outline" className="ml-2" onClick={() => handleDirectStart(task.id)}>
+                          <Button size="sm" variant="outline" className="ml-2" onClick={() => handleDirectStart(task.id)}>
                             Start Task
                           </Button>
                         )}

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET() {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     // Get total active users (users created in the last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -59,18 +61,17 @@ export async function GET() {
       return sum + (isNaN(budgetValue) ? 0 : budgetValue);
     }, 0);
 
-    return NextResponse.json({
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json({
       activeUsers,
       totalProjects,
       totalBudget,
       projectCounts,
       totalManagers
     });
-  } catch (error) {
-    console.error("Error fetching admin stats:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch admin statistics" },
-      { status: 500 }
-    );
-  }
-} 
+  
+}); 

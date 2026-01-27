@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function POST(req: Request) {
-  try {
+export const POST = withErrorHandler(async (req: Request) => {
+  const startTime = Date.now();
     const { email } = await req.json();
 
-    console.log("Testing email configuration:");
-    console.log("SMTP_HOST:", process.env.SMTP_HOST);
-    console.log("SMTP_PORT:", process.env.SMTP_PORT);
-    console.log("SMTP_USER:", process.env.SMTP_USER);
-    console.log("SMTP_FROM:", process.env.SMTP_FROM);
-    console.log("SMTP_PASSWORD:", process.env.SMTP_PASSWORD ? "***SET***" : "NOT SET");
+    Logger.info("Testing email configuration:");
+    Logger.info("SMTP_HOST:", process.env.SMTP_HOST);
+    Logger.info("SMTP_PORT:", process.env.SMTP_PORT);
+    Logger.info("SMTP_USER:", process.env.SMTP_USER);
+    Logger.info("SMTP_FROM:", process.env.SMTP_FROM);
+    Logger.info("SMTP_PASSWORD:", process.env.SMTP_PASSWORD ? "***SET***" : "NOT SET");
 
     const testEmailTemplate = `
       <html>
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
       html: testEmailTemplate,
     });
 
-    console.log("Email test result:", result);
+    Logger.info("Email test result:", result);
 
     if (result.success) {
       return NextResponse.json({ 
@@ -36,17 +38,16 @@ export async function POST(req: Request) {
         result 
       });
     } else {
-      return NextResponse.json({ 
+      
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json({ 
         error: "Failed to send test email",
         details: result.error 
       }, { status: 500 });
     }
 
-  } catch (error) {
-    console.error("Test email error:", error);
-    return NextResponse.json({ 
-      error: "Test email failed",
-      details: error 
-    }, { status: 500 });
-  }
-} 
+  
+}); 

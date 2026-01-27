@@ -2,18 +2,18 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { uploadToBlob, deleteFromBlob, isValidFileSize, ALLOWED_DOCUMENT_TYPES, ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from "@/lib/blob-storage";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { taskId: string } }
-) {
-  try {
+export const GET = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ taskId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taskId } = params;
+    const { taskId } = await params;
 
     const attachments = await prisma.attachment.findMany({
       where: {
@@ -24,27 +24,24 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(attachments);
-  } catch (error) {
-    console.error("Error fetching attachments:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch attachments" },
-      { status: 500 }
-    );
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
 
-export async function POST(
-  request: Request,
-  { params }: { params: { taskId: string } }
-) {
-  try {
+  return NextResponse.json(attachments);
+  
+});
+
+export const POST = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ taskId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taskId } = params;
+    const { taskId } = await params;
 
     // Verify task exists
     const task = await prisma.task.findUnique({
@@ -90,27 +87,24 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(attachment);
-  } catch (error) {
-    console.error("Error uploading attachment:", error);
-    return NextResponse.json(
-      { error: "Failed to upload attachment" },
-      { status: 500 }
-    );
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { taskId: string } }
-) {
-  try {
+  return NextResponse.json(attachment);
+  
+});
+
+export const DELETE = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ taskId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taskId } = params;
+    const { taskId } = await params;
     const { searchParams } = new URL(request.url);
     const attachmentId = searchParams.get("attachmentId");
 
@@ -141,12 +135,11 @@ export async function DELETE(
     // Delete file from Blob storage
     await deleteFromBlob(attachment.fileUrl);
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting attachment:", error);
-    return NextResponse.json(
-      { error: "Failed to delete attachment" },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('DELETE mint_pms', duration);
+
+  return NextResponse.json({ success: true });
+  
+}); 

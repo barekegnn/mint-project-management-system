@@ -2,13 +2,16 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
 import { NotificationType, TaskStatus } from "@prisma/client";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function PATCH(request: Request, { params }: { params: { taskId: string } }) {
+export const PATCH = withErrorHandler(async (request: Request, { params }: { params: Promise<{ taskId: string }> }) => {
+  const startTime = Date.now();
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const { taskId } = params;
+  const { taskId } = await params;
   const { status } = await request.json();
 
   // Only allow updating tasks assigned to the current user
@@ -35,15 +38,20 @@ export async function PATCH(request: Request, { params }: { params: { taskId: st
       await prisma.notification.create({
         data: {
           type: NotificationType.TASK_STATUS_CHANGED,
-          message: `Task "${task.title}" was marked as completed by ${user.fullName || 'a team member'}.`,
+          message: `Task "${task.title}" was marked as completed by ${user.name || 'a team member'}.`,
           userId: task.project.holderId,
           projectId: task.project.id,
         },
       });
     }
   } catch (e) {
-    console.error("Failed to create completion notification:", e);
+    Logger.error("Failed to create completion notification:", e);
   }
 
+  
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('PATCH mint_pms', duration);
+
   return NextResponse.json({ task: updatedTask });
-} 
+}); 

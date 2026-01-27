@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { taskId: string } }
-) {
-  try {
+export const GET = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ taskId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { taskId } = params;
+    const { taskId } = await params;
 
     const comments = await prisma.comment.findMany({
       where: {
@@ -31,27 +31,24 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(comments);
-  } catch (error) {
-    console.error('Error fetching comments:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch comments' },
-      { status: 500 }
-    );
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
 
-export async function POST(
-  request: Request,
-  { params }: { params: { taskId: string } }
-) {
-  try {
+  return NextResponse.json(comments);
+  
+});
+
+export const POST = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ taskId: string }> }) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { taskId } = params;
+    const { taskId } = await params;
     const body = await request.json();
     const { content } = body;
 
@@ -87,12 +84,11 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(comment);
-  } catch (error) {
-    console.error('Error creating comment:', error);
-    return NextResponse.json(
-      { error: 'Failed to create comment' },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json(comment);
+  
+}); 

@@ -3,19 +3,23 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { sign } from "jsonwebtoken";
 import { serialize } from "cookie";
+import { withErrorHandler } from "@/lib/api-error-handler";
+import { Logger } from "@/lib/logger";
+import { AuthenticationError } from "@/lib/errors";
 
 const SECRET = process.env.JWT_SECRET || "your-secret"; // put this in .env
 
-export async function POST(req: Request) {
-  const { email, password } = await req.json();
+export const POST = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
+  const { email, password } = await request.json();
 
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    throw new AuthenticationError("Invalid credentials");
   }
 
-  console.log("User data:", user); // Debug log
+  Logger.info("User logged in", { userId: user.id, email: user.email });
 
   // Create JWT
   const token = sign(
@@ -50,5 +54,9 @@ export async function POST(req: Request) {
     })
   );
 
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('User login', duration);
+
   return response;
-}
+});

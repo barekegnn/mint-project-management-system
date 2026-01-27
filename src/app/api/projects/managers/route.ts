@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET() {
-  try {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const projectManagers = await prisma.user.findMany({
       where: {
         role: "PROJECT_MANAGER"
@@ -14,12 +16,11 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json({ projectManagers });
-  } catch (error) {
-    console.error("Error fetching project managers:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch project managers" },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json({ projectManagers });
+  
+}); 

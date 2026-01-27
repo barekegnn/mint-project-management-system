@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function POST(req: Request) {
-  try {
+export const POST = withErrorHandler(async (req: Request) => {
+  const startTime = Date.now();
     const { token, password } = await req.json();
 
     if (!token || !password) {
@@ -57,14 +59,13 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json({
       message: "Account activated successfully",
     });
-  } catch (error) {
-    console.error("Error activating account:", error);
-    return NextResponse.json(
-      { error: "Failed to activate account" },
-      { status: 500 }
-    );
-  }
-} 
+  
+}); 

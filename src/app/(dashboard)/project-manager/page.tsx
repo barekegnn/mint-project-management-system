@@ -691,8 +691,8 @@ export default function ProjectManagerDashboard() {
               <FinalReportForm
                 project={selectedProject}
                 manager={data.currentManager}
-                teamMembers={data.projects.find(p => p.id === selectedProject.id)?.teamMembers || []}
-                tasks={data.projectProgress.find(p => p.projectName === selectedProject.name)?.tasks || []}
+                teamMembers={[]}
+                tasks={[]}
                 onClose={() => setShowReportForm(false)}
               />
             )}

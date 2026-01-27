@@ -153,7 +153,7 @@ export function handleAPIError(
 }
 
 /**
- * Async error handler wrapper for API routes
+ * Async error handler wrapper for API routes with request logging
  * 
  * Usage:
  * export const GET = withErrorHandler(async (request) => {
@@ -164,22 +164,42 @@ export function withErrorHandler<T extends any[]>(
   handler: (...args: T) => Promise<NextResponse>
 ) {
   return async (...args: T): Promise<NextResponse> => {
+    const startTime = Date.now();
+    let response: NextResponse;
+    
+    // Extract request info if available
+    const request = args[0] as Request | undefined;
+    const method = request?.method || 'UNKNOWN';
+    const path = request ? new URL(request.url).pathname : 'unknown';
+    
     try {
-      return await handler(...args);
+      response = await handler(...args);
+      
+      // Log successful request
+      const duration = Date.now() - startTime;
+      const statusCode = response.status;
+      Logger.logRequest(method, path, statusCode, duration);
+      
+      return response;
     } catch (error) {
-      // Extract request info if available
-      const request = args[0] as Request | undefined;
+      // Log error and create error response
+      const duration = Date.now() - startTime;
       const context = request
         ? {
-            path: new URL(request.url).pathname,
-            method: request.method,
+            path,
+            method,
           }
         : undefined;
 
-      return handleAPIError(
+      response = handleAPIError(
         error instanceof Error ? error : new Error(String(error)),
         context
       );
+      
+      // Log failed request
+      Logger.logRequest(method, path, response.status, duration);
+      
+      return response;
     }
   };
 }

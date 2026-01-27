@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { holderId: string } }
-) {
-  try {
+export const GET = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ holderId: string }> }) => {
+  const startTime = Date.now();
     const currentUser = await getCurrentUser();
     
     if (!currentUser) {
@@ -24,8 +24,8 @@ export async function GET(
       );
     }
 
-    const { holderId } = params;
-    console.log("🔍 Looking for projects assigned to holderId:", holderId);
+    const { holderId } = await params;
+    Logger.info("🔍 Looking for projects assigned to holderId:", holderId);
 
     // Verify the holder exists
     const holder = await prisma.user.findUnique({
@@ -33,7 +33,7 @@ export async function GET(
       select: { id: true, fullName: true, email: true, role: true }
     });
 
-    console.log("👤 Holder found:", holder);
+    Logger.info("👤 Holder found:", holder);
 
     if (!holder) {
       return NextResponse.json(
@@ -63,8 +63,8 @@ export async function GET(
       }
     });
 
-    console.log("📋 Projects found for holder:", projects.length);
-    console.log("📋 Projects details:", projects);
+    Logger.info("📋 Projects found for holder:", projects.length);
+    Logger.info("📋 Projects details:", projects);
 
     // Also check all projects to see if any have this holderId
     const allProjects = await prisma.project.findMany({
@@ -74,9 +74,14 @@ export async function GET(
         holderId: true
       }
     });
-    console.log("🔍 All projects in database:", allProjects.map(p => ({ id: p.id, name: p.name, holderId: p.holderId })));
+    Logger.info("🔍 All projects in database:", allProjects.map(p => ({ id: p.id, name: p.name, holderId: p.holderId })));
 
-    return NextResponse.json({
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json({
       holder: {
         id: holder.id,
         fullName: holder.fullName,
@@ -85,11 +90,5 @@ export async function GET(
       },
       projects: projects
     });
-  } catch (error) {
-    console.error("Error fetching projects by holder:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch projects" },
-      { status: 500 }
-    );
-  }
-} 
+  
+}); 

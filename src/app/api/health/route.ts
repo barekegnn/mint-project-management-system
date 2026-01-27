@@ -2,13 +2,17 @@
  * Health Check Endpoint
  * 
  * Returns the health status of the application and its services
+ * 
+ * Requirements: US-6.4
+ * - Checks database connection with latency measurement
+ * - Returns JSON with service status (healthy/degraded/down)
+ * - Returns 200 for healthy, 503 for unhealthy
  */
 
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { withErrorHandler } from '@/lib/api-error-handler';
-
-const prisma = new PrismaClient();
+import { getCacheHeader } from '@/lib/cache-headers';
 
 interface ServiceHealth {
   service: string;
@@ -68,5 +72,10 @@ export const GET = withErrorHandler(async (request: Request) => {
     uptime: process.uptime(),
   };
 
-  return NextResponse.json(response, { status: statusCode });
+  return NextResponse.json(response, { 
+    status: statusCode,
+    headers: {
+      'Cache-Control': getCacheHeader('short'), // Cache for 5 minutes
+    },
+  });
 });

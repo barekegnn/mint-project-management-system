@@ -1,10 +1,17 @@
 generator client {
   provider = "prisma-client-js"
+  // Optimize for serverless environments
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Use connection pooling for serverless (Neon with PgBouncer)
+  // Neon provides two connection strings:
+  // - Direct connection: for migrations and admin tasks
+  // - Pooled connection: for application queries (recommended for serverless)
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model User {

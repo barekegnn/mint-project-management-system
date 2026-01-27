@@ -5,108 +5,88 @@ import { sendEmail } from "@/lib/email";
 import crypto from "crypto";
 import { createUserSchema } from "@/lib/validation-schemas";
 import { ZodError } from "zod";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function POST(req: Request) {
-  try {
-    const currentUser = await getCurrentUser();
-    
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const body = await req.json();
-
-    // Validate input with Zod
-    const validatedData = createUserSchema.parse(body);
-    const { fullName, email, role } = validatedData;
-
-    // Check if user with this email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "A user with this email already exists" },
-        { status: 400 }
-      );
-    }
-
-    // Generate secure activation token
-    const activationToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-    // Create user with pending status (no password set)
-    const user = await prisma.user.create({
-      data: {
-        fullName,
-        email,
-        role,
-        status: "PENDING_ACTIVATION",
-        activationToken,
-        activationTokenExpires: expiresAt,
-        createdBy: currentUser.id,
-        // password is not set - will be null until activation
-      },
-    });
-
-    // Create activation URL
-    const activationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/activate-account?token=${activationToken}`;
-
-    // Log the activation URL for debugging
-    console.log("[DEBUG] Activation URL:", activationUrl);
-    console.log("[DEBUG] Attempting to send activation email to:", email);
-
-    // Send activation email
-    const emailTemplate = createActivationEmailTemplate(fullName, activationUrl, role);
-    const emailResult = await sendEmail({
-      to: email,
-      subject: "Welcome to Project Management System - Activate Your Account",
-      html: emailTemplate,
-    });
-    console.log("[DEBUG] Email send result:", emailResult);
-
-    if (!emailResult.success) {
-      console.error("[ERROR] Email sending failed:", emailResult.error);
-      // Delete the user if email fails
-      await prisma.user.delete({ where: { id: user.id } });
-      return NextResponse.json(
-        { error: "Failed to send activation email. Please check your email configuration." },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      message: "User created successfully. Activation email sent.",
-      userId: user.id,
-      activationUrl // Return the activation URL for debugging
-    }, { status: 201 });
-
-  } catch (error) {
-    // Handle Zod validation errors
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { 
-          error: "Validation failed", 
-          details: error.errors.map(e => ({
-            field: e.path.join('.'),
-            message: e.message
-          }))
-        },
-        { status: 400 }
-      );
-    }
-
-    console.error("Error creating user:", error);
+export const POST = withErrorHandler(async (req: Request) => {
+  const startTime = Date.now();
+  const currentUser = await getCurrentUser();
+  
+  if (!currentUser) {
     return NextResponse.json(
-      { error: "Failed to create user" },
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  const body = await req.json();
+
+  // Validate input with Zod
+  const validatedData = createUserSchema.parse(body);
+  const { fullName, email, role } = validatedData;
+
+  // Check if user with this email already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  if (existingUser) {
+    return NextResponse.json(
+      { error: "A user with this email already exists" },
+      { status: 400 }
+    );
+  }
+
+  // Generate secure activation token
+  const activationToken = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+  // Create user with pending status (no password set)
+  const user = await prisma.user.create({
+    data: {
+      fullName,
+      email,
+      role,
+      status: "PENDING_ACTIVATION",
+      activationToken,
+      activationTokenExpires: expiresAt,
+      createdBy: currentUser.id,
+      // password is not set - will be null until activation
+    },
+  });
+
+  // Create activation URL
+  const activationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/activate-account?token=${activationToken}`;
+
+  // Log the activation URL for debugging
+  Logger.info("[DEBUG] Activation URL:", activationUrl);
+  Logger.info("[DEBUG] Attempting to send activation email to:", email);
+
+  // Send activation email
+  const emailTemplate = createActivationEmailTemplate(fullName, activationUrl, role);
+  const emailResult = await sendEmail({
+    to: email,
+    subject: "Welcome to Project Management System - Activate Your Account",
+    html: emailTemplate,
+  });
+  Logger.info("[DEBUG] Email send result:", emailResult);
+
+  if (!emailResult.success) {
+    Logger.error("[ERROR] Email sending failed:", emailResult.error);
+    // Delete the user if email fails
+    await prisma.user.delete({ where: { id: user.id } });
+    return NextResponse.json(
+      { error: "Failed to send activation email. Please check your email configuration." },
       { status: 500 }
     );
   }
-}
+
+  return NextResponse.json({
+    message: "User created successfully. Activation email sent.",
+    userId: user.id,
+    activationUrl // Return the activation URL for debugging
+  }, { status: 201 });
+});
 
 function createActivationEmailTemplate(fullName: string, activationUrl: string, role: string) {
   return `

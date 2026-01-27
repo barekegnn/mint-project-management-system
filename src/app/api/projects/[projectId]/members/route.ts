@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ projectId: string }> }
-) {
-  try {
+export const POST = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ projectId: string }> }) => {
+  const startTime = Date.now();
     const body = await request.json();
     if (!body.memberId) {
       return NextResponse.json(
@@ -95,21 +95,18 @@ export async function POST(
       ),
     };
 
-    return NextResponse.json(transformedProject);
-  } catch (error) {
-    console.error('Error adding member to project:', error);
-    return NextResponse.json(
-      { error: 'Failed to add member to project' },
-      { status: 500 }
-    );
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ projectId: string; memberId: string }> }
-) {
-  try {
+  return NextResponse.json(transformedProject);
+  
+});
+
+export const DELETE = withErrorHandler(async (request: Request,
+  { params }: { params: Promise<{ projectId: string; memberId: string }> }) => {
+  const startTime = Date.now();
     const { projectId, memberId } = await params;
 
     // Find the team associated with this project
@@ -179,12 +176,11 @@ export async function DELETE(
       ),
     };
 
-    return NextResponse.json(transformedProject);
-  } catch (error) {
-    console.error('Error removing member from project:', error);
-    return NextResponse.json(
-      { error: 'Failed to remove member from project' },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('DELETE mint_pms', duration);
+
+  return NextResponse.json(transformedProject);
+  
+}); 

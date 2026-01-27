@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET(request: Request) {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");
 
@@ -14,7 +17,7 @@ export async function GET(request: Request) {
 
   try {
     // Find user with the verification token
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { verificationToken: token },
     });
 
@@ -49,10 +52,15 @@ export async function GET(request: Request) {
     // Redirect to success page
     return NextResponse.redirect(new URL("/email-verified", request.url));
   } catch (error) {
-    console.error("Error verifying email:", error);
-    return NextResponse.json(
+    Logger.error("Error verifying email:", error);
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
+  return NextResponse.json(
       { error: "Failed to verify email" },
       { status: 500 }
     );
   }
-}
+});

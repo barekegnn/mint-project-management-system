@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function POST() {
-  try {
+export const POST = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -98,12 +100,11 @@ export async function POST() {
       upcomingDeadlines,
     };
 
-    return NextResponse.json(reportData);
-  } catch (error) {
-    console.error("Error generating report data:", error);
-    return NextResponse.json(
-      { error: "Failed to generate report data" },
-      { status: 500 }
-    );
-  }
-} 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json(reportData);
+  
+}); 

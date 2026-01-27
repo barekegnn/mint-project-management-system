@@ -9,7 +9,7 @@ interface Task {
   id: string;
   title: string;
   description?: string;
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  status: "TODO" | "IN_PROGRESS" | "REVIEW" | "COMPLETED" | "BLOCKED";
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   assignedTo?: {
     id: string;

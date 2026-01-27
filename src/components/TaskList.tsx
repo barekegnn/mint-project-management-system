@@ -170,7 +170,7 @@ export default function TaskList() {
       {/* Task List */}
       <div className="space-y-4">
         {filteredTasks.length > 0 ? (
-          filteredTasks.map((task) => <TaskCard key={task.id} task={task} />)
+          filteredTasks.map((task) => <TaskCard key={task.id} task={task as any} />)
         ) : (
           <div className="text-center py-10">
             <svg

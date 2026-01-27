@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function POST() {
-  try {
+export const POST = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const currentUser = await getCurrentUser();
     
     if (!currentUser) {
@@ -62,22 +64,21 @@ export async function POST() {
         }
       });
     } catch (error) {
-      console.log('SystemSettings table not found:', error);
+      Logger.info('SystemSettings table not found:', error);
       return NextResponse.json(
         { error: 'Database not ready - please run: npx prisma db push' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ 
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json({ 
       success: true, 
       message: "Settings reset to defaults" 
     });
-  } catch (error) {
-    console.error("Error resetting settings:", error);
-    return NextResponse.json(
-      { error: "Failed to reset settings" },
-      { status: 500 }
-    );
-  }
-} 
+  
+}); 

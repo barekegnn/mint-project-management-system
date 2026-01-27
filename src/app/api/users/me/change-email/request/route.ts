@@ -4,9 +4,11 @@ import { getCurrentUser } from "@/lib/auth";
 import jwt from "jsonwebtoken";
 import { SECRET } from "@/lib/serverAuth";
 import { sendEmail } from "@/lib/email";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function POST(request: Request) {
-  try {
+export const POST = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -40,11 +42,13 @@ export async function POST(request: Request) {
 
     await sendEmail({ to: newEmail, subject: "Confirm your email change", html });
 
-    return NextResponse.json({ message: "Confirmation email sent" });
-  } catch (error) {
-    console.error("Change email request error:", error);
-    return NextResponse.json({ error: "Failed to request email change" }, { status: 500 });
-  }
-}
+    
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('POST mint_pms', duration);
+
+  return NextResponse.json({ message: "Confirmation email sent" });
+  
+});
 
 

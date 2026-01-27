@@ -1,61 +1,57 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET() {
-  try {
-    const budgets = await prisma.budget.findMany({
-      include: {
-        project: {
-          select: {
-            name: true,
-            department: true,
-          },
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
+  
+  const budgets = await prisma.budget.findMany({
+    include: {
+      project: {
+        select: {
+          name: true,
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
 
-    return NextResponse.json({ budgets });
-  } catch (error) {
-    console.error('Error fetching budgets:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch budgets' },
-      { status: 500 }
-    );
-  }
-}
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('Fetch budgets', duration);
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { projectId, allocation, expenses, status, date } = body;
+  return NextResponse.json({ budgets });
+});
 
-    const budget = await prisma.budget.create({
-      data: {
-        projectId,
-        allocation: parseFloat(allocation),
-        expenses: parseFloat(expenses),
-        status,
-        date: new Date(date),
-      },
-      include: {
-        project: {
-          select: {
-            name: true,
-            department: true,
-          },
+export const POST = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
+  const body = await request.json();
+  const { projectId, allocation, expenses, status, date, department } = body;
+
+  const budget = await prisma.budget.create({
+    data: {
+      projectId,
+      department: department || 'General',
+      allocation: parseFloat(allocation),
+      expenses: parseFloat(expenses),
+      status,
+      date: new Date(date),
+    },
+    include: {
+      project: {
+        select: {
+          name: true,
         },
       },
-    });
+    },
+  });
 
-    return NextResponse.json({ budget });
-  } catch (error) {
-    console.error('Error creating budget:', error);
-    return NextResponse.json(
-      { error: 'Failed to create budget' },
-      { status: 500 }
-    );
-  }
-} 
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('Create budget', duration);
+
+  return NextResponse.json({ budget });
+}); 

@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from '@/lib/api-error-handler';
+import { Logger } from '@/lib/logger';
 
-export async function GET() {
+export const GET = withErrorHandler(async (request: Request) => {
+  const startTime = Date.now();
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -46,5 +49,10 @@ export async function GET() {
   if (tasksThisWeek >= 5) badges.push({ label: "5 Tasks in a Week", type: "star" });
   if (streak >= 3) badges.push({ label: `${streak}-Day Streak`, type: "flame" });
 
+  
+  // Log slow query if needed
+  const duration = Date.now() - startTime;
+  Logger.logSlowQuery('GET mint_pms', duration);
+
   return NextResponse.json({ badges, streak });
-} 
+}); 
