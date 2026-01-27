@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/serverAuth";
 import { sendEmail } from "@/lib/email";
 import crypto from "crypto";
+import { createUserSchema } from "@/lib/validation-schemas";
+import { ZodError } from "zod";
 
 export async function POST(req: Request) {
   try {
@@ -15,33 +17,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const { fullName, email, role, assignedProjects } = await req.json();
+    const body = await req.json();
 
-    // Basic server-side validation
-    const nameRegex = /^[A-Za-z\s]+$/;
-    const emailRegex = /^[\w.!#$%&'*+/=?^`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*$/;
-    const digitsOnly = /^\d+$/;
-
-    if (!fullName || !email || !role) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    if (!nameRegex.test(fullName)) {
-      return NextResponse.json(
-        { error: "Name must contain letters and spaces only" },
-        { status: 400 }
-      );
-    }
-
-    if (digitsOnly.test(email) || !emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Enter a valid email address" },
-        { status: 400 }
-      );
-    }
+    // Validate input with Zod
+    const validatedData = createUserSchema.parse(body);
+    const { fullName, email, role } = validatedData;
 
     // Check if user with this email already exists
     const existingUser = await prisma.user.findUnique({
@@ -106,6 +86,20 @@ export async function POST(req: Request) {
     }, { status: 201 });
 
   } catch (error) {
+    // Handle Zod validation errors
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { 
+          error: "Validation failed", 
+          details: error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        },
+        { status: 400 }
+      );
+    }
+
     console.error("Error creating user:", error);
     return NextResponse.json(
       { error: "Failed to create user" },

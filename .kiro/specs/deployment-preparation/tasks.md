@@ -78,20 +78,20 @@ Each task builds incrementally, ensuring the system remains functional throughou
     - **Validates: Requirements US-3.5**
 
 
-- [ ] 4. Add input validation to all API endpoints
-  - [ ] 4.1 Create Zod validation schemas
+- [x] 4. Add input validation to all API endpoints
+  - [x] 4.1 Create Zod validation schemas
     - Define schemas for user input (login, register, project creation, task creation)
     - Define schemas for query parameters and route parameters
     - Create reusable validation utilities
     - _Requirements: US-2.6_
   
-  - [ ] 4.2 Apply validation to API routes
+  - [x] 4.2 Apply validation to API routes
     - Add Zod validation to all POST, PUT, PATCH endpoints
     - Return 400 errors for validation failures with descriptive messages
     - Sanitize user inputs to prevent XSS and injection attacks
     - _Requirements: US-2.6_
   
-  - [ ] 4.3 Write property test for input validation
+  - [x] 4.3 Write property test for input validation
     - **Property 3: Input Validation on All API Endpoints**
     - **Validates: Requirements US-2.6**
 

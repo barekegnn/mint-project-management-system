@@ -2,18 +2,18 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { withErrorHandler, validateRequiredFields, validateEmail } from "@/lib/api-error-handler";
-import { AuthenticationError, ValidationError } from "@/lib/errors";
+import { withErrorHandler } from "@/lib/api-error-handler";
+import { AuthenticationError } from "@/lib/errors";
 import { Logger } from "@/lib/logger";
+import { loginSchema } from "@/lib/validation-schemas";
 
 export const POST = withErrorHandler(async (request: Request) => {
   const startTime = Date.now();
   const body = await request.json();
-  const { email, password } = body;
 
-  // Validate required fields
-  validateRequiredFields(body, ['email', 'password']);
-  validateEmail(email);
+  // Validate input with Zod
+  const validatedData = loginSchema.parse(body);
+  const { email, password } = validatedData;
 
   // Find user
   const user = await prisma.user.findUnique({

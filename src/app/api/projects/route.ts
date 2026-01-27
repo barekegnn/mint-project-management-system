@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { ProjectStatus } from "@prisma/client";
 import { getCurrentUser } from "@/lib/serverAuth";
+import { createProjectSchema } from "@/lib/validation-schemas";
+import { ZodError } from "zod";
 
 // GET: Fetch all projects, filter by holderId if provided
 export async function GET() {
@@ -178,34 +180,18 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    let { name, holderId, budget, description, fileName, fileUrl, status } = body;
 
-    // Validate required fields
-    if (!name || !holderId || budget === undefined) {
-      return NextResponse.json(
-        { error: "Name, holderId, and budget are required fields" },
-        { status: 400 }
-      );
-    }
+    // Validate input with Zod
+    const validatedData = createProjectSchema.parse(body);
+    let { name, holderId, budget, description, status } = validatedData;
 
-    // Validate budget is numeric
-    budget = Number(budget);
-    if (isNaN(budget)) {
-      return NextResponse.json(
-        { error: "Budget must be a number" },
-        { status: 400 }
-      );
-    }
+    // Convert budget to number if it's a string
+    const budgetNumber = typeof budget === 'string' ? Number(budget) : budget;
 
-    // Validate optional status
-    if (status && !Object.values(ProjectStatus).includes(status)) {
-      return NextResponse.json(
-        { error: `Invalid status. Must be one of: ${Object.values(ProjectStatus).join(", ")}` },
-        { status: 400 }
-      );
-    }
+    // Convert budget to number if it's a string
+    const budgetNumber = typeof budget === 'string' ? Number(budget) : budget;
 
-    // Confirm holder (user) exists
+    // Confirm holder (user) exists and has appropriate role
     const user = await prisma.user.findUnique({
       where: { id: holderId }
     });
@@ -220,10 +206,10 @@ export async function POST(request: Request) {
         name,
         holder: { connect: { id: user.id } },
         status: status || ProjectStatus.PLANNED,
-        budget: String(budget),
+        budget: String(budgetNumber),
         description: description || null,
-        fileName: fileName || null,
-        fileUrl: fileUrl || null,
+        fileName: null,
+        fileUrl: null,
       },
     });
 
@@ -260,6 +246,20 @@ export async function POST(request: Request) {
     }, { status: 201 });
 
   } catch (error: any) {
+    // Handle Zod validation errors
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { 
+          error: "Validation failed", 
+          details: error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        },
+        { status: 400 }
+      );
+    }
+
     console.error("Error creating project:", error);
     return NextResponse.json(
       { error: `Failed to create project: ${error?.message || "Unknown error"}` },

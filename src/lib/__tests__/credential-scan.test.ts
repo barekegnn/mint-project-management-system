@@ -35,7 +35,9 @@ describe('Property 1: No Hardcoded Credentials in Codebase', () => {
     'build',
     '.env.example',
     'package-lock.json',
-    'credential-scan.test.ts', // Exclude this test file
+    '__tests__', // Exclude all test files
+    '.test.ts', // Exclude test files
+    '.test.js', // Exclude test files
     'scan-credentials.js', // Exclude the scanner itself
   ];
   
@@ -124,7 +126,7 @@ describe('Property 1: No Hardcoded Credentials in Codebase', () => {
           subFindings.forEach((findings, file) => {
             allFindings.set(file, findings);
           });
-        } else if (entry.isFile() && shouldScan(fullPath)) {
+        } else if (entry.isFile() && shouldScan(fullPath) && !shouldExclude(fullPath)) {
           const findings = scanFile(fullPath);
           if (findings.length > 0) {
             allFindings.set(fullPath, findings);

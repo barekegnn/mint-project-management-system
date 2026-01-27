@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { createTaskSchema, updateTaskSchema } from "@/lib/validation-schemas";
+import { ZodError } from "zod";
 
 // Get all tasks with filtering options
 export async function GET(request: Request) {
@@ -82,6 +84,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log("Request body:", body);
 
+    // Validate input with Zod
+    const validatedData = createTaskSchema.parse(body);
+
     const {
       title,
       description,
@@ -90,16 +95,7 @@ export async function POST(request: Request) {
       status,
       priority,
       deadline,
-      labels,
-    } = body;
-
-    // Validate required fields
-    if (!title || !projectId) {
-      return NextResponse.json(
-        { error: "Title and project ID are required fields" },
-        { status: 400 }
-      );
-    }
+    } = validatedData;
 
     // Verify project exists
     const project = await prisma.project.findUnique({
@@ -137,9 +133,6 @@ export async function POST(request: Request) {
         status: status || "TODO",
         priority: priority || "MEDIUM",
         deadline: deadline ? new Date(deadline) : null,
-        labels: {
-          connect: labels?.map((id: string) => ({ id })) || [],
-        },
       },
       include: {
         project: true,
@@ -151,6 +144,20 @@ export async function POST(request: Request) {
     console.log("Created task:", task);
     return NextResponse.json(task);
   } catch (error) {
+    // Handle Zod validation errors
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { 
+          error: "Validation failed", 
+          details: error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        },
+        { status: 400 }
+      );
+    }
+
     console.error("Error creating task:", error);
     return NextResponse.json(
       { error: "Failed to create task" },
@@ -172,8 +179,11 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Special handling for deadline and labels if present
-    if (updateFields.deadline) {
+    // Validate update fields with Zod
+    const validatedData = updateTaskSchema.parse(updateFields);
+
+    // Special handling for deadline if present
+    if (validatedData.deadline) {
       // Validate against parent project's dueDate
       const existingTaskForDeadline = await prisma.task.findUnique({
         where: { id },
@@ -190,7 +200,7 @@ export async function PUT(request: Request) {
         select: { dueDate: true },
       });
       if (parentProject?.dueDate) {
-        const newDeadline = new Date(updateFields.deadline as any);
+        const newDeadline = new Date(validatedData.deadline);
         const projectDue = new Date(parentProject.dueDate);
         if (newDeadline.getTime() > projectDue.getTime()) {
           return NextResponse.json(
@@ -204,17 +214,11 @@ export async function PUT(request: Request) {
           );
         }
       }
-      updateFields.deadline = new Date(updateFields.deadline);
-    }
-    if (updateFields.labels) {
-      updateFields.labels = {
-        set: updateFields.labels.map((id: string) => ({ id }))
-      };
     }
 
     const task = await prisma.task.update({
       where: { id },
-      data: updateFields,
+      data: validatedData,
       include: {
         project: true,
         assignedTo: true,
@@ -224,6 +228,20 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(task);
   } catch (error) {
+    // Handle Zod validation errors
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { 
+          error: "Validation failed", 
+          details: error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        },
+        { status: 400 }
+      );
+    }
+
     console.error("Error updating task:", error);
     return NextResponse.json(
       { error: "Failed to update task" },
