@@ -225,7 +225,7 @@ export default function BudgetOverviewPage() {
           </div>
           <div className="flex gap-2">
             <Button 
-              className="bg-[#F4511E] hover:bg-[#D84315] text-white"
+              className="bg-green-600 hover:bg-green-700 text-white"
               onClick={() => window.location.href = '/admin/projects'}
             >
               <Edit className="w-4 h-4 mr-2" />

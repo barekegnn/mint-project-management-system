@@ -23,8 +23,12 @@ pnpm-debug.log*
 coverage/
 .nyc_output/
 
-# Env files
+# Env files - NEVER commit these!
 .env
+.env.local
+.env.development
+.env.production
+.env.test
 .env.*
 !.env.example
 
