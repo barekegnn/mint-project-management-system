@@ -1,12 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   // Optimize for serverless environments
   previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   // Use connection pooling for serverless (Neon with PgBouncer)
   // Neon provides two connection strings:
   // - Direct connection: for migrations and admin tasks
@@ -42,6 +42,11 @@ model User {
   sentReports              Report[]       @relation("SentReports")
   assignedTasks            Task[]         @relation("AssignedTasks")
   teams                    Team[]         @relation("TeamMembers")
+
+  @@index([role])
+  @@index([createdBy])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Project {
@@ -61,6 +66,10 @@ model Project {
   holder        User?          @relation("ProjectManager", fields: [holderId], references: [id])
   tasks         Task[]
   teams         Team[]         @relation("TeamProjects")
+
+  @@index([holderId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model SystemSettings {
@@ -102,6 +111,9 @@ model Notification {
   createdAt DateTime         @default(now())
   project   Project          @relation("ProjectNotifications", fields: [projectId], references: [id])
   user      User             @relation("UserNotifications", fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([createdAt])
 }
 
 model PasswordReset {
@@ -130,6 +142,12 @@ model Task {
   assignedTo   User?        @relation("AssignedTasks", fields: [assignedToId], references: [id])
   project      Project      @relation(fields: [projectId], references: [id])
   labels       Label[]      @relation("LabelToTask")
+
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+  @@index([projectId, status])
+  @@index([deadline])
 }
 
 model Comment {
@@ -180,6 +198,8 @@ model Report {
 
   @@index([senderId])
   @@index([recipientId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Message {

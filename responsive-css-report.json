@@ -1,0 +1,438 @@
+{
+  "filesChecked": 231,
+  "totalIssues": 22,
+  "issuesBySeverity": {
+    "high": 0,
+    "medium": 11,
+    "low": 11
+  },
+  "issues": [
+    {
+      "file": "src\\app\\api\\forgot-password\\route.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\app\\api\\forgot-password\\route.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\app\\api\\forgot-password\\route.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\app\\api\\forgot-password\\route.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\app\\api\\forgot-password\\route.ts",
+      "type": "noMaxWidth",
+      "match": "width: 600px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\app\\api\\forgot-password\\route.ts",
+      "type": "noMaxWidth",
+      "match": "width: 250px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\app\\api\\forgot-password\\route.ts",
+      "type": "noMaxWidth",
+      "match": "width: 600px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\app\\api\\users\\create\\route.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\app\\api\\users\\create\\route.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\app\\api\\users\\create\\route.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\app\\api\\users\\create\\route.ts",
+      "type": "noMaxWidth",
+      "match": "width: 600px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\app\\api\\users\\create\\route.ts",
+      "type": "noMaxWidth",
+      "match": "width: 600px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\components\\Header.tsx",
+      "type": "noMaxWidth",
+      "match": "width: 768px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\components\\Header.tsx",
+      "type": "noMaxWidth",
+      "match": "width: 768px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\lib\\email-templates\\reset-password.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\lib\\email-templates\\reset-password.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\lib\\email-templates\\reset-password.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\lib\\email-templates\\reset-password.ts",
+      "type": "smallFontSize",
+      "match": "font-size: 14px",
+      "description": "Font size may be too small for mobile (< 16px)",
+      "severity": "medium"
+    },
+    {
+      "file": "src\\lib\\email-templates\\reset-password.ts",
+      "type": "noMaxWidth",
+      "match": "width: 600px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\lib\\email-templates\\reset-password.ts",
+      "type": "noMaxWidth",
+      "match": "width: 600px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\lib\\email-templates\\reset-password.ts",
+      "type": "noMaxWidth",
+      "match": "width: 150px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    },
+    {
+      "file": "src\\lib\\emailTemplates.ts",
+      "type": "noMaxWidth",
+      "match": "width: 600px",
+      "description": "Fixed width without max-width constraint",
+      "severity": "low"
+    }
+  ],
+  "goodPatterns": [
+    {
+      "file": "src\\app\\(auth)\\forgot-password\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 5
+    },
+    {
+      "file": "src\\app\\(auth)\\login\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 4
+    },
+    {
+      "file": "src\\app\\(dashboard)\\admin\\analytics\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 3
+    },
+    {
+      "file": "src\\app\\(dashboard)\\admin\\budget\\enhanced-analysis.tsx",
+      "type": "tailwindResponsive",
+      "count": 6
+    },
+    {
+      "file": "src\\app\\(dashboard)\\admin\\budget\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\app\\(dashboard)\\admin\\loading.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\app\\(dashboard)\\admin\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 16
+    },
+    {
+      "file": "src\\app\\(dashboard)\\admin\\profile\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 16
+    },
+    {
+      "file": "src\\app\\(dashboard)\\admin\\projects\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 10
+    },
+    {
+      "file": "src\\app\\(dashboard)\\admin\\settings\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 9
+    },
+    {
+      "file": "src\\app\\(dashboard)\\admin\\users\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 3
+    },
+    {
+      "file": "src\\app\\(dashboard)\\project-manager\\loading.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\app\\(dashboard)\\project-manager\\my-projects\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 2
+    },
+    {
+      "file": "src\\app\\(dashboard)\\project-manager\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 10
+    },
+    {
+      "file": "src\\app\\(dashboard)\\project-manager\\profile\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 16
+    },
+    {
+      "file": "src\\app\\(dashboard)\\project-manager\\reports\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 13
+    },
+    {
+      "file": "src\\app\\(dashboard)\\project-manager\\settings\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 4
+    },
+    {
+      "file": "src\\app\\(dashboard)\\project-manager\\tasks\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 9
+    },
+    {
+      "file": "src\\app\\(dashboard)\\project-manager\\team\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 3
+    },
+    {
+      "file": "src\\app\\(dashboard)\\project-manager\\team-management\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 3
+    },
+    {
+      "file": "src\\app\\(dashboard)\\team-member\\loading.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\app\\(dashboard)\\team-member\\my-tasks\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 4
+    },
+    {
+      "file": "src\\app\\(dashboard)\\team-member\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 21
+    },
+    {
+      "file": "src\\app\\(dashboard)\\team-member\\profile\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 16
+    },
+    {
+      "file": "src\\app\\(dashboard)\\team-member\\projects\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 9
+    },
+    {
+      "file": "src\\app\\(dashboard)\\team-member\\report\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\app\\(dashboard)\\team-member\\settings\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\app\\api\\forgot-password\\route.ts",
+      "type": "mediaQuery",
+      "count": 1
+    },
+    {
+      "file": "src\\app\\api\\users\\create\\route.ts",
+      "type": "mediaQuery",
+      "count": 1
+    },
+    {
+      "file": "src\\app\\globals.css",
+      "type": "tailwindResponsive",
+      "count": 4
+    },
+    {
+      "file": "src\\app\\info\\[slug]\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 14
+    },
+    {
+      "file": "src\\app\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 26
+    },
+    {
+      "file": "src\\app\\reset-password\\page.tsx",
+      "type": "tailwindResponsive",
+      "count": 4
+    },
+    {
+      "file": "src\\components\\CreateTaskDialog.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\components\\DashboardLayout.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\components\\EditTaskDialog.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\components\\Header.tsx",
+      "type": "tailwindResponsive",
+      "count": 14
+    },
+    {
+      "file": "src\\components\\ProjectCards.tsx",
+      "type": "tailwindResponsive",
+      "count": 5
+    },
+    {
+      "file": "src\\components\\ProjectList.tsx",
+      "type": "tailwindResponsive",
+      "count": 7
+    },
+    {
+      "file": "src\\components\\QuickAccess.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\components\\Sidebar.tsx",
+      "type": "tailwindResponsive",
+      "count": 5
+    },
+    {
+      "file": "src\\components\\SummaryCards.tsx",
+      "type": "tailwindResponsive",
+      "count": 2
+    },
+    {
+      "file": "src\\components\\TaskBoard.tsx",
+      "type": "tailwindResponsive",
+      "count": 2
+    },
+    {
+      "file": "src\\components\\TaskCard.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\components\\TaskList.tsx",
+      "type": "tailwindResponsive",
+      "count": 8
+    },
+    {
+      "file": "src\\components\\ui\\button.tsx",
+      "type": "tailwindResponsive",
+      "count": 2
+    },
+    {
+      "file": "src\\components\\ui\\calendar.tsx",
+      "type": "tailwindResponsive",
+      "count": 3
+    },
+    {
+      "file": "src\\components\\ui\\dialog.tsx",
+      "type": "tailwindResponsive",
+      "count": 4
+    },
+    {
+      "file": "src\\components\\ui\\input.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\components\\ui\\loading-skeleton.tsx",
+      "type": "tailwindResponsive",
+      "count": 3
+    },
+    {
+      "file": "src\\components\\ui\\textarea.tsx",
+      "type": "tailwindResponsive",
+      "count": 1
+    },
+    {
+      "file": "src\\components\\UserPreferences.tsx",
+      "type": "tailwindResponsive",
+      "count": 3
+    },
+    {
+      "file": "src\\lib\\email-templates\\reset-password.ts",
+      "type": "mediaQuery",
+      "count": 1
+    }
+  ],
+  "summary": {
+    "hasMediaQueries": true,
+    "usesTailwindResponsive": true,
+    "usesFlexbox": false,
+    "usesGrid": false
+  }
+}

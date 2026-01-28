@@ -165,6 +165,10 @@ export const GET = withErrorHandler(async (request: Request) => {
     const type = searchParams.get("type") || "received"; // "sent" or "received"
     const status = searchParams.get("status"); // "PENDING", "APPROVED", "REJECTED"
 
+    // Import pagination utilities
+    const { parsePaginationParams, createPaginationResult, getPrismaPaginationOptions } = await import("@/lib/pagination");
+    const { page, limit } = parsePaginationParams(searchParams);
+
     const where: any = {
       ...(type === "sent" ? { senderId: user.id } : { recipientId: user.id }),
     };
@@ -172,12 +176,26 @@ export const GET = withErrorHandler(async (request: Request) => {
       where.status = status.toUpperCase();
     }
 
+    // Get total count for pagination
+    const total = await prisma.report.count({ where });
+
+    // Fetch reports with optimized field selection
     const reports = await prisma.report.findMany({
       where,
       orderBy: {
         createdAt: "desc",
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        fileUrl: true,
+        fileName: true,
+        fileType: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        taskId: true,
         sender: {
           select: {
             id: true,
@@ -193,13 +211,16 @@ export const GET = withErrorHandler(async (request: Request) => {
           },
         },
       },
+      ...getPrismaPaginationOptions(page, limit),
     });
 
     
   // Log slow query if needed
   const duration = Date.now() - startTime;
-  Logger.logSlowQuery('GET mint_pms', duration);
+  Logger.logSlowQuery('GET reports', duration);
 
-  return NextResponse.json(reports);
+  // Return paginated response
+  const result = createPaginationResult(reports, total, page, limit);
+  return NextResponse.json(result);
   
 });

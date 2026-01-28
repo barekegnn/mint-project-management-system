@@ -5,6 +5,14 @@ import { withErrorHandler } from "@/lib/api-error-handler";
 import { Logger } from "@/lib/logger";
 import { AuthenticationError } from "@/lib/errors";
 
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { createTaskSchema, updateTaskSchema } from "@/lib/validation-schemas";
+import { withErrorHandler } from "@/lib/api-error-handler";
+import { Logger } from "@/lib/logger";
+import { AuthenticationError } from "@/lib/errors";
+import { parsePaginationParams, createPaginationResult, getPrismaPaginationOptions } from "@/lib/pagination";
+
 // Get all tasks with filtering options
 export const GET = withErrorHandler(async (request: Request) => {
   const startTime = Date.now();
@@ -14,7 +22,10 @@ export const GET = withErrorHandler(async (request: Request) => {
   const priority = searchParams.get("priority");
   const assignedTo = searchParams.get("assignedTo");
 
-  Logger.debug("GET /api/tasks", { projectId, status, priority, assignedTo });
+  // Parse pagination parameters
+  const { page, limit } = parsePaginationParams(searchParams);
+
+  Logger.debug("GET /api/tasks", { projectId, status, priority, assignedTo, page, limit });
 
   // Import getCurrentUser
   const { getCurrentUser } = await import("@/lib/serverAuth");
@@ -43,31 +54,87 @@ export const GET = withErrorHandler(async (request: Request) => {
 
   Logger.debug("Prisma where clause", { where, userId: currentUser.id, role: currentUser.role });
 
+  // Get total count for pagination
+  const total = await prisma.task.count({ where });
+
+  // Fetch tasks with optimized field selection
   const tasks = await prisma.task.findMany({
     where,
-    include: {
-      project: true,
-      assignedTo: true,
-      comments: {
-        include: {
-          author: true,
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      status: true,
+      priority: true,
+      deadline: true,
+      projectId: true,
+      assignedToId: true,
+      createdAt: true,
+      updatedAt: true,
+      project: {
+        select: {
+          id: true,
+          name: true,
+          status: true,
         },
       },
-      labels: true,
-      attachments: true,
+      assignedTo: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          role: true,
+        },
+      },
+      comments: {
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 5, // Only fetch latest 5 comments
+      },
+      labels: {
+        select: {
+          id: true,
+          name: true,
+          color: true,
+        },
+      },
+      attachments: {
+        select: {
+          id: true,
+          fileName: true,
+          fileUrl: true,
+          createdAt: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
     },
+    ...getPrismaPaginationOptions(page, limit),
   });
 
   // Log slow query if it takes more than 500ms
   const duration = Date.now() - startTime;
   Logger.logSlowQuery('SELECT tasks with includes', duration);
   
-  Logger.debug("Found tasks", { count: tasks.length });
+  Logger.debug("Found tasks", { count: tasks.length, total });
   
-  return NextResponse.json(tasks);
+  // Return paginated response
+  const result = createPaginationResult(tasks, total, page, limit);
+  return NextResponse.json(result);
 });
 
 // Create a new task

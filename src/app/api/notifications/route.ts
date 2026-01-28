@@ -5,6 +5,14 @@ import { withErrorHandler } from "@/lib/api-error-handler";
 import { Logger } from "@/lib/logger";
 import { AuthenticationError, ValidationError } from "@/lib/errors";
 
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/serverAuth";
+import { withErrorHandler } from "@/lib/api-error-handler";
+import { Logger } from "@/lib/logger";
+import { AuthenticationError, ValidationError } from "@/lib/errors";
+import { parsePaginationParams, createPaginationResult, getPrismaPaginationOptions } from "@/lib/pagination";
+
 export const GET = withErrorHandler(async (request: Request) => {
   const startTime = Date.now();
   const user = await getCurrentUser();
@@ -13,22 +21,45 @@ export const GET = withErrorHandler(async (request: Request) => {
     throw new AuthenticationError("Unauthorized");
   }
 
+  // Parse pagination parameters
+  const { searchParams } = new URL(request.url);
+  const { page, limit } = parsePaginationParams(searchParams);
+
+  // Get total count for pagination
+  const total = await prisma.notification.count({
+    where: { userId: user.id },
+  });
+
   // Only fetch notifications where the current user is the recipient
   const notifications = await prisma.notification.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
     include: {
-      project: { select: { id: true, name: true, status: true } },
-      user: { select: { id: true, fullName: true, role: true } }
+      project: { 
+        select: { 
+          id: true, 
+          name: true, 
+          status: true 
+        } 
+      },
+      user: { 
+        select: { 
+          id: true, 
+          fullName: true, 
+          role: true 
+        } 
+      }
     },
-    take: 50
+    ...getPrismaPaginationOptions(page, limit),
   });
 
   // Log slow query if needed
   const duration = Date.now() - startTime;
   Logger.logSlowQuery('Fetch notifications', duration);
 
-  return NextResponse.json(notifications);
+  // Return paginated response
+  const result = createPaginationResult(notifications, total, page, limit);
+  return NextResponse.json(result);
 });
 
 export const POST = withErrorHandler(async (request: Request) => {
