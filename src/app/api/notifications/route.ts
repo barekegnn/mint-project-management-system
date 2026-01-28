@@ -4,13 +4,6 @@ import { getCurrentUser } from "@/lib/serverAuth";
 import { withErrorHandler } from "@/lib/api-error-handler";
 import { Logger } from "@/lib/logger";
 import { AuthenticationError, ValidationError } from "@/lib/errors";
-
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/serverAuth";
-import { withErrorHandler } from "@/lib/api-error-handler";
-import { Logger } from "@/lib/logger";
-import { AuthenticationError, ValidationError } from "@/lib/errors";
 import { parsePaginationParams, createPaginationResult, getPrismaPaginationOptions } from "@/lib/pagination";
 
 export const GET = withErrorHandler(async (request: Request) => {

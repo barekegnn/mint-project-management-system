@@ -3,11 +3,6 @@ import prisma from "@/lib/prisma";
 import { withErrorHandler } from '@/lib/api-error-handler';
 import { Logger } from '@/lib/logger';
 
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { withErrorHandler } from '@/lib/api-error-handler';
-import { Logger } from '@/lib/logger';
-
 export const GET = withErrorHandler(async (request: Request) => {
   const startTime = Date.now();
     // Get total active users (users created in the last 30 days)

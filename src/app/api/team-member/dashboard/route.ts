@@ -4,12 +4,6 @@ import { getCurrentUser } from "@/lib/serverAuth";
 import { withErrorHandler } from '@/lib/api-error-handler';
 import { Logger } from '@/lib/logger';
 
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/serverAuth";
-import { withErrorHandler } from '@/lib/api-error-handler';
-import { Logger } from '@/lib/logger';
-
 export const GET = withErrorHandler(async (request: Request) => {
   const startTime = Date.now();
     const user = await getCurrentUser();

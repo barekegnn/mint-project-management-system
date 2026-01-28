@@ -4,13 +4,6 @@ import { createTaskSchema, updateTaskSchema } from "@/lib/validation-schemas";
 import { withErrorHandler } from "@/lib/api-error-handler";
 import { Logger } from "@/lib/logger";
 import { AuthenticationError } from "@/lib/errors";
-
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { createTaskSchema, updateTaskSchema } from "@/lib/validation-schemas";
-import { withErrorHandler } from "@/lib/api-error-handler";
-import { Logger } from "@/lib/logger";
-import { AuthenticationError } from "@/lib/errors";
 import { parsePaginationParams, createPaginationResult, getPrismaPaginationOptions } from "@/lib/pagination";
 
 // Get all tasks with filtering options
