@@ -5,7 +5,7 @@ import prisma from "./prisma";
 import { compare } from "bcrypt";
 import { cookies } from "next/headers";
 
-const SECRET = process.env.NEXTAUTH_SECRET || "your-secret";
+const SECRET = process.env.JWT_SECRET || "your-secret";
 
 // Extend the built-in session types
 declare module "next-auth" {

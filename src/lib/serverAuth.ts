@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { verify } from "jsonwebtoken";
 
-const SECRET = process.env.NEXTAUTH_SECRET || "your-secret";
+const SECRET = process.env.JWT_SECRET || "your-secret";
 
 export async function getCurrentUser() {
   try {
