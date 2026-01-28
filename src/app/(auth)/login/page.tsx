@@ -49,7 +49,7 @@ function LoginForm() {
           const decodedCallbackUrl = decodeURIComponent(callbackUrl);
           // Validate the callback URL is safe (starts with /)
           if (decodedCallbackUrl.startsWith('/')) {
-            router.push(decodedCallbackUrl);
+            window.location.href = decodedCallbackUrl;
             return;
           }
         } catch (error) {
@@ -57,16 +57,16 @@ function LoginForm() {
         }
       }
 
-      // Default role-based redirects
+      // Default role-based redirects - use window.location for full page reload
       switch (role) {
         case "ADMIN":
-          router.push("/admin");
+          window.location.href = "/admin";
           break;
         case "PROJECT_MANAGER":
-          router.push("/project-manager");
+          window.location.href = "/project-manager";
           break;
         case "TEAM_MEMBER":
-          router.push("/team-member");
+          window.location.href = "/team-member";
           break;
         default:
           console.log("Unknown role:", role);
