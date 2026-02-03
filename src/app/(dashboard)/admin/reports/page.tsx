@@ -34,7 +34,8 @@ export default function AdminReportsPage() {
       const res = await fetch("/api/reports");
       if (!res.ok) throw new Error("Failed to fetch reports");
       const data = await res.json();
-      setReports(data);
+      // Handle paginated response
+      setReports(data.data || data);
     } catch (err: any) {
       setError(err.message || "Failed to fetch reports");
     } finally {

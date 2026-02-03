@@ -101,7 +101,7 @@ export const POST = withErrorHandler(async (request: Request, { params }: { para
     // Create a notification for the team member
     const notificationData: any = {
       type: "TASK_UPDATED",
-      message: `Your report "${report.title}" has been ${action === "accept" ? "approved" : "rejected"} by ${user.name}.${comment ? ` Comment: ${comment}` : ""}`,
+      message: `Your report "${report.title}" has been ${action === "accept" ? "approved" : "rejected"} by ${user.fullName}.${comment ? ` Comment: ${comment}` : ""}`,
       userId: report.senderId,
     };
 
