@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
+import { ZodError } from 'zod';
 import {
   AppError,
   DatabaseError,
@@ -107,6 +108,24 @@ export function handleAPIError(
 ): NextResponse {
   // Log the error
   Logger.error('API Error', error, context);
+
+  // Handle Zod validation errors
+  if (error instanceof ZodError) {
+    const firstError = error.errors[0];
+    const message = firstError?.message || 'Validation failed';
+    const field = firstError?.path.join('.') || 'unknown';
+    
+    const appError = new ValidationError(message, {
+      field,
+      errors: error.errors.map(err => ({
+        field: err.path.join('.'),
+        message: err.message,
+      })),
+    });
+    
+    const response = createErrorResponse(appError, context?.path);
+    return NextResponse.json(response, { status: 400 });
+  }
 
   // Handle Prisma errors
   if (error instanceof Prisma.PrismaClientKnownRequestError) {

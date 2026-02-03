@@ -38,8 +38,8 @@ export const paginationSchema = z.object({
 // ============================================
 
 export const loginSchema = z.object({
-  email: emailSchema,
-  password: z.string().min(1, 'Password is required'),
+  email: z.string({ required_error: 'Email is required' }).min(1, 'Email is required').email('Invalid email format'),
+  password: z.string({ required_error: 'Password is required' }).min(1, 'Password is required'),
 });
 
 export const registerSchema = z.object({
