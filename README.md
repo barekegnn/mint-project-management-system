@@ -4,7 +4,7 @@ A comprehensive project management system built for the Ethiopian Ministry of In
 
 ## 🌐 Live Demo
 
-🚀 **[View Live Demo](https://yourapp.vercel.app)** *(Update this URL after deployment)*
+🚀 **[View Live Demo](https://mint-pms.vercel.app)** *
 
 Experience the system firsthand with our demo accounts. See the [Demo Credentials](#-demo-credentials) section below for login information.
 
