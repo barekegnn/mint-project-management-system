@@ -73,35 +73,35 @@ const featuresData = [
 
 const testimonialsData = [
   {
-    initials: "SJ",
+    initials: "AM",
     quote: "MinT has transformed how we manage our projects. The interface is intuitive and the features are exactly what we needed.",
-    name: "Sarah Johnson",
-    role: "Project Manager, TechCorp",
-    company: "TechCorp",
+    name: "Abebe Mulugeta",
+    role: "Project Manager",
+    company: "Ethiopian Tech Solutions",
     success: "40% increase in project delivery speed"
   },
   {
-    initials: "MC",
+    initials: "SM",
     quote: "The best project management tool we've used. It's helped us increase our team's productivity by 40%.",
-    name: "Michael Chen",
-    role: "CTO, InnovateX",
-    company: "InnovateX",
+    name: "Selam Mekonnen",
+    role: "CTO",
+    company: "Addis Innovation Hub",
     success: "60% reduction in project delays"
   },
   {
-    initials: "AL",
+    initials: "TG",
     quote: "Outstanding platform that has revolutionized our project delivery timeline and team coordination.",
-    name: "Amanda Lee",
-    role: "Senior Director, GlobalTech",
-    company: "GlobalTech",
+    name: "Tigist Gebremedhin",
+    role: "Senior Director",
+    company: "Ethiopian Digital Services",
     success: "95% client satisfaction rate"
   },
   {
-    initials: "RK",
+    initials: "DT",
     quote: "MinT's examination features have given us unprecedented visibility into project health and risks.",
-    name: "Robert Kim",
-    role: "Program Director, FutureSystems",
-    company: "FutureSystems",
+    name: "Dawit Tadesse",
+    role: "Program Director",
+    company: "Ministry Projects Division",
     success: "50% faster risk identification"
   }
 ];
@@ -158,41 +158,59 @@ export default function Home() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [adminRes, usersRes, teamRes] = await Promise.all([
-          fetch('/api/admin/stats', { cache: 'no-store' }),
-          fetch('/api/users', { cache: 'no-store' }),
-          fetch('/api/team-members', { cache: 'no-store' })
+        // Fetch data from multiple endpoints
+        const [projectsRes, usersRes] = await Promise.all([
+          fetch('/api/projects', { cache: 'no-store' }),
+          fetch('/api/users', { cache: 'no-store' })
         ]);
-        const adminData = adminRes.ok ? await adminRes.json() : null;
-        const usersData = usersRes.ok ? await usersRes.json() : null;
-        const teamData = teamRes.ok ? await teamRes.json() : [];
 
-        const totalProjects = adminData?.totalProjects || 0;
-        // Count total users for clearer landing metric visibility
-        const totalUsers = Array.isArray(usersData?.users) ? usersData.users.length : 0;
-        // Keep these for success rate calculation
-        const activeProjects = (adminData?.projectCounts?.ACTIVE || 0) + (adminData?.projectCounts?.IN_PROGRESS || 0);
-        const completedProjects = adminData?.projectCounts?.COMPLETED || 0;
-        const teamMembers = Array.isArray(teamData) ? teamData.length : 0;
+        let totalProjects = 0;
+        let completedProjects = 0;
+        let totalUsers = 0;
 
-        const successRate = totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0;
+        // Handle projects data
+        if (projectsRes.ok) {
+          const projectsData = await projectsRes.json();
+          const projects = projectsData.data || projectsData || [];
+          totalProjects = Array.isArray(projects) ? projects.length : 0;
+          completedProjects = Array.isArray(projects) 
+            ? projects.filter((p: any) => p.status === 'COMPLETED').length 
+            : 0;
+        }
 
+        // Handle users data
+        if (usersRes.ok) {
+          const usersData = await usersRes.json();
+          const users = usersData.data || usersData.users || usersData || [];
+          totalUsers = Array.isArray(users) ? users.length : 0;
+        }
+
+        // Calculate success rate
+        const successRate = totalProjects > 0 
+          ? Math.round((completedProjects / totalProjects) * 100) 
+          : 0;
+
+        // Update stats with real data
         const updated = [
           { label: 'Projects', value: totalProjects, suffix: '+' },
           { label: 'Users', value: totalUsers, suffix: '+' },
           { label: 'Success Rate', value: successRate, suffix: '%' },
           { label: 'Client Satisfaction', value: 4.9, suffix: '/5' }
         ];
+        
         setStatsData(updated);
 
         // If the stats are already visible, re-run the animation to new targets
         if (isVisible) {
+          setAnimatedStats(updated.map(() => 0));
           animateCounters();
         }
-      } catch (e) {
-        // Ignore errors and keep initial stats
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        // Keep initial stats on error
       }
     };
+    
     fetchStats();
   }, [isVisible]);
 
@@ -344,16 +362,16 @@ export default function Home() {
           </div>
 
           {/* Stats Section */}
-            <div ref={statsRef} className="mt-15 grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div ref={statsRef} className="mt-12 sm:mt-15 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {statsData.map((stat, index) => (
                 <div 
                   key={index} 
-                  className="bg-white p-8 rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group"
+                  className="bg-white p-4 sm:p-8 rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group"
                 >
-                  <p className="text-4xl font-bold text-[#087684] mb-2 group-hover:text-[#065a66] transition-colors duration-300">
+                  <p className="text-2xl sm:text-4xl font-bold text-[#087684] mb-1 sm:mb-2 group-hover:text-[#065a66] transition-colors duration-300">
                     {isVisible ? animatedStats[index] : statsData[index].value}{stat.suffix}
                   </p>
-                  <p className="text-gray-600 font-medium group-hover:text-gray-800 transition-colors duration-300">{stat.label}</p>
+                  <p className="text-xs sm:text-base text-gray-600 font-medium group-hover:text-gray-800 transition-colors duration-300">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -411,48 +429,48 @@ export default function Home() {
             </p>
             
             <div className="relative">
-              <div className="bg-white p-10 rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+              <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
                 {/* Decorative background elements */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#087684]/5 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#065a66]/5 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
                 
                 <div className="relative z-10">
-                  <div className="flex items-start space-x-6">
-                    <div className="flex-shrink-0">
-                      <div className="w-20 h-20 bg-gradient-to-br from-[#087684] to-[#065a66] rounded-2xl flex items-center justify-center shadow-lg">
-                        <span className="text-white font-bold text-xl">
+                  <div className="flex flex-col sm:flex-row items-start sm:space-x-6 space-y-4 sm:space-y-0">
+                    <div className="flex-shrink-0 mx-auto sm:mx-0">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#087684] to-[#065a66] rounded-2xl flex items-center justify-center shadow-lg">
+                        <span className="text-white font-bold text-lg sm:text-xl">
                           {testimonialsData[currentTestimonial].initials}
                         </span>
                       </div>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
+                    <div className="flex-1 text-center sm:text-left">
+                      <div className="flex items-center justify-center sm:justify-start space-x-3 mb-3">
                         <div className="flex">
                           {[...Array(5)].map((_, i) => (
-                            <svg key={i} className="w-6 h-6 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                            <svg key={i} className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 fill-current" viewBox="0 0 20 20">
                               <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
                             </svg>
                           ))}
                         </div>
-                        <span className="text-sm text-gray-500 font-medium">5.0 rating</span>
+                        <span className="text-xs sm:text-sm text-gray-500 font-medium">5.0 rating</span>
                       </div>
-                      <p className="text-gray-700 mb-5 text-lg leading-relaxed font-medium">
+                      <p className="text-gray-700 mb-5 text-base sm:text-lg leading-relaxed font-medium">
                         "{testimonialsData[currentTestimonial].quote}"
                       </p>
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 mb-4">
-                        <p className="text-green-800 text-sm font-semibold flex items-center">
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Success: {testimonialsData[currentTestimonial].success}
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3 sm:p-4 mb-4">
+                        <p className="text-green-800 text-xs sm:text-sm font-semibold flex items-center justify-center sm:justify-start">
+                          <CheckCircle2 className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span className="break-words">Success: {testimonialsData[currentTestimonial].success}</span>
                         </p>
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900 text-lg">
+                        <p className="font-bold text-gray-900 text-base sm:text-lg">
                           {testimonialsData[currentTestimonial].name}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm text-gray-500">
                           {testimonialsData[currentTestimonial].role}
                         </p>
-                        <p className="text-sm text-[#087684] font-semibold">
+                        <p className="text-xs sm:text-sm text-[#087684] font-semibold">
                           {testimonialsData[currentTestimonial].company}
                         </p>
                       </div>
