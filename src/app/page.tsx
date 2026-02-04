@@ -141,7 +141,6 @@ export default function Home() {
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          animateCounters();
         }
       },
       { threshold: 0.2 }
@@ -173,12 +172,6 @@ export default function Home() {
           ];
           
           setStatsData(updated);
-
-          // If the stats are already visible, re-run the animation to new targets
-          if (isVisible) {
-            setAnimatedStats(updated.map(() => 0));
-            animateCounters();
-          }
         } else {
           console.error('Failed to fetch stats:', response.status);
         }
@@ -189,9 +182,12 @@ export default function Home() {
     };
     
     fetchStats();
-  }, [isVisible]);
+  }, []); // Fetch once on mount
 
-  const animateCounters = () => {
+  // Animate counters when stats become visible
+  useEffect(() => {
+    if (!isVisible) return;
+
     const duration = 2000;
     const steps = 60;
     const stepDuration = duration / steps;
@@ -201,7 +197,7 @@ export default function Home() {
       step++;
       const progress = step / steps;
       
-      setAnimatedStats(statsData.map((stat, index) => {
+      setAnimatedStats(statsData.map((stat) => {
         const targetValue = stat.value;
         const currentValue = Math.floor(targetValue * progress);
         return currentValue;
@@ -212,7 +208,9 @@ export default function Home() {
         setAnimatedStats(statsData.map(stat => stat.value));
       }
     }, stepDuration);
-  };
+
+    return () => clearInterval(timer);
+  }, [isVisible, statsData]);
 
   // Auto-playing testimonials
   useEffect(() => {
