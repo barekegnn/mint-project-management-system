@@ -38,14 +38,18 @@ export default function TeamMemberReportPage() {
   const fetchManagers = async () => {
     const res = await fetch("/api/team-member/managers");
     if (res.ok) {
-      setManagers(await res.json());
+      const data = await res.json();
+      // Handle paginated response
+      setManagers(data.data || data || []);
     }
   };
 
   const fetchMessages = async () => {
     const res = await fetch("/api/messages?type=team-member");
     if (res.ok) {
-      setMessages(await res.json());
+      const data = await res.json();
+      // Handle paginated response
+      setMessages(data.data || data || []);
     }
   };
 
@@ -55,7 +59,8 @@ export default function TeamMemberReportPage() {
       const response = await fetch("/api/reports?type=sent");
       if (!response.ok) throw new Error("Failed to fetch reports");
       const data = await response.json();
-      setReports(data);
+      // Handle paginated response
+      setReports(data.data || data || []);
     } catch (err) {
       // Optionally show a toast
     } finally {

@@ -62,7 +62,8 @@ export default function NotificationsPage() {
       const response = await fetch('/api/team-member/notifications');
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data);
+        // Handle paginated response
+        setNotifications(data.data || data || []);
       } else {
         throw new Error('Failed to fetch notifications');
       }
