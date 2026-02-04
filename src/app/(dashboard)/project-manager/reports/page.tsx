@@ -113,7 +113,8 @@ export default function ReportsPage() {
       const response = await fetch("/api/reports?status=PENDING&type=received");
       if (!response.ok) throw new Error("Failed to fetch pending reports");
       const data = await response.json();
-      setPendingReports(data);
+      // Handle paginated response
+      setPendingReports(data.data || data || []);
     } catch (err) {
       toast.error("Failed to fetch pending reports");
     }
@@ -124,7 +125,8 @@ export default function ReportsPage() {
       const response = await fetch("/api/reports?type=sent");
       if (!response.ok) throw new Error("Failed to fetch all reports");
       const data = await response.json();
-      setAllReports(data);
+      // Handle paginated response
+      setAllReports(data.data || data || []);
     } catch (err) {
       // Optionally handle error
     }

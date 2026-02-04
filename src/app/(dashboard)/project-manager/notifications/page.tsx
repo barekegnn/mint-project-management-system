@@ -132,7 +132,8 @@ export default function NotificationsPage() {
           throw new Error('Failed to fetch notifications');
         }
         const data = await response.json();
-        setNotifications(data);
+        // Handle paginated response
+        setNotifications(data.data || data || []);
       } catch (error) {
         console.error('Error fetching notifications:', error);
         toast.error('Failed to load notifications');

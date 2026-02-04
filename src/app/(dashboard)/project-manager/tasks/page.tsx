@@ -251,7 +251,8 @@ export default function TasksPage() {
       const response = await fetch(`/api/tasks?projectId=${selectedProjectId}`);
       if (!response.ok) throw new Error("Failed to fetch tasks");
       const tasksData = await response.json();
-      setTasks(tasksData);
+      // Handle paginated response
+      setTasks(tasksData.data || tasksData || []);
     } catch (error) {
       toast.error("Failed to fetch tasks");
     }
