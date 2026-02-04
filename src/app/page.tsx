@@ -158,52 +158,29 @@ export default function Home() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch data from multiple endpoints
-        const [projectsRes, usersRes] = await Promise.all([
-          fetch('/api/projects', { cache: 'no-store' }),
-          fetch('/api/users', { cache: 'no-store' })
-        ]);
+        // Fetch from public stats endpoint (no auth required)
+        const response = await fetch('/api/public/stats', { cache: 'no-store' });
 
-        let totalProjects = 0;
-        let completedProjects = 0;
-        let totalUsers = 0;
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Update stats with real data
+          const updated = [
+            { label: 'Projects', value: data.totalProjects || 0, suffix: '+' },
+            { label: 'Users', value: data.totalUsers || 0, suffix: '+' },
+            { label: 'Success Rate', value: data.successRate || 0, suffix: '%' },
+            { label: 'Client Satisfaction', value: data.clientSatisfaction || 4.9, suffix: '/5' }
+          ];
+          
+          setStatsData(updated);
 
-        // Handle projects data
-        if (projectsRes.ok) {
-          const projectsData = await projectsRes.json();
-          const projects = projectsData.data || projectsData || [];
-          totalProjects = Array.isArray(projects) ? projects.length : 0;
-          completedProjects = Array.isArray(projects) 
-            ? projects.filter((p: any) => p.status === 'COMPLETED').length 
-            : 0;
-        }
-
-        // Handle users data
-        if (usersRes.ok) {
-          const usersData = await usersRes.json();
-          const users = usersData.data || usersData.users || usersData || [];
-          totalUsers = Array.isArray(users) ? users.length : 0;
-        }
-
-        // Calculate success rate
-        const successRate = totalProjects > 0 
-          ? Math.round((completedProjects / totalProjects) * 100) 
-          : 0;
-
-        // Update stats with real data
-        const updated = [
-          { label: 'Projects', value: totalProjects, suffix: '+' },
-          { label: 'Users', value: totalUsers, suffix: '+' },
-          { label: 'Success Rate', value: successRate, suffix: '%' },
-          { label: 'Client Satisfaction', value: 4.9, suffix: '/5' }
-        ];
-        
-        setStatsData(updated);
-
-        // If the stats are already visible, re-run the animation to new targets
-        if (isVisible) {
-          setAnimatedStats(updated.map(() => 0));
-          animateCounters();
+          // If the stats are already visible, re-run the animation to new targets
+          if (isVisible) {
+            setAnimatedStats(updated.map(() => 0));
+            animateCounters();
+          }
+        } else {
+          console.error('Failed to fetch stats:', response.status);
         }
       } catch (error) {
         console.error('Error fetching stats:', error);
