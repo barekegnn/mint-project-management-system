@@ -157,11 +157,15 @@ export default function Home() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        console.log('Fetching stats from /api/public/stats...');
         // Fetch from public stats endpoint (no auth required)
         const response = await fetch('/api/public/stats', { cache: 'no-store' });
 
+        console.log('Stats response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Stats data received:', data);
           
           // Update stats with real data
           const updated = [
@@ -171,9 +175,11 @@ export default function Home() {
             { label: 'Client Satisfaction', value: data.clientSatisfaction || 4.9, suffix: '/5' }
           ];
           
+          console.log('Updated stats:', updated);
           setStatsData(updated);
         } else {
-          console.error('Failed to fetch stats:', response.status);
+          const errorText = await response.text();
+          console.error('Failed to fetch stats:', response.status, errorText);
         }
       } catch (error) {
         console.error('Error fetching stats:', error);
